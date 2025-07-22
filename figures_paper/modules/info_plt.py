@@ -24,7 +24,7 @@ class plt_module(object):
                                                   'histtype'  : 'stepfilled', 
                                                   'facecolor' : 'b',
                                                   'marker'    : 'x',
-                                                  'label'     : '1000-members target',
+                                                  'label'     : '2000-members target',
                                                 },
                                  'theoritical' : {
                                                   'color'     : 'k',   
@@ -64,8 +64,8 @@ class plt_module(object):
                                                    },
                                  'toy_cVAE1'     : {
                                                   'color'     : 'purple',
-                                                  'linestyle' : 'dashed',
-                                                  'linewidth' : 1, 
+                                                  'linestyle' : '-',
+                                                  'linewidth' : 0.75, 
                                                   'histtype'  : 'step',  
                                                   'facecolor' : 'w',
                                                   'marker'    : 'o',
