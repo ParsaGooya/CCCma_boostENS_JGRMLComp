@@ -1,0 +1,154 @@
+---
+# input path modules (location of cloned scripts in local computer)
+dir_source   : /home/rpg002/boostEns_diag_tas/figures_paper
+
+# output path 
+dir_frnt_out : /space/hall5/sitestore/eccc/crd/ccrn/users/rpg002/DCPP_Diagnostics/BoostEnsemblev2
+
+# input paths (toy datasets)
+define: &dir_toy_data '/space/hall5/sitestore/eccc/crd/ccrn/users/rpg002/data/fgco2/simulation/fake_test'
+define: &dir_toy_VAE1 '/space/hall5/sitestore/eccc/crd/ccrn/users/rpg002/output/fgco2_ems/SOM-FFN/results/Autoencoder/run_set_final_toy/N2_v2_Banealing_L0_archNone_batch100_e100_BVAE_10-1_NnRandDecodInit_RmEnsMn_hist_fake_data_normal_beta0.1_Step10_weightedMSE_TSE20/tests2'
+define: &dir_toy_VAE2 '/space/hall5/sitestore/eccc/crd/ccrn/users/rpg002/output/fgco2_ems/SOM-FFN/results/Autoencoder/run_set_final_toy/N2_v2_Banealing_L0_archNone_batch100_e100_BVAE_10-1_NnRandDecodInit_RmEnsMn_hist_fake_data_normal_beta0.1_Step10_weightedMSE_TSE20/tests2' 
+define: &dir_toy_cVAE1 '/space/hall5/sitestore/eccc/crd/ccrn/users/rpg002/output/fgco2_ems/SOM-FFN/results/Autoencoder/run_set_final_toy/N2_v3_Banealing_L0_archNone_batch100_e50_cBVAElatentdependant_10-1_NnRandDecodInit_hist_fake_data_normal_beta0.2_weightedMSE_TSE20/tests2'
+define: &dir_toy_cVAE2 '/space/hall5/sitestore/eccc/crd/ccrn/users/rpg002/output/fgco2_ems/SOM-FFN/results/Autoencoder/run_set_final_toy/N2_v3_Banealing_L0_archNone_batch100_e50_cBVAElatentdependant_10-1_NnRandDecodInit_hist_fake_data_normal_beta0.2_weightedMSE_TSE20/tests2'
+# define: &dir_toy_cVAE2 '/space/hall5/sitestore/eccc/crd/ccrn/users/rpg002/output/fgco2_ems/SOM-FFN/results/Autoencoder/run_set_final_toy/N2_v3_Banealing_L0_archNone_batch100_e50_cBVAElatentdependant_10-1_NnRandDecodInit_hist_fake_data_normal_pi_beta0.2_weightedMSE_TSE20/tests2'
+
+define: &dir_clm_data  '/space/hall5/sitestore/eccc/crd/ccrn/users/rpg002/data/tas/piControl'
+define: &dir_clm_VAE1  '/space/hall5/sitestore/eccc/crd/ccrn/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_picontrol/N1_v2_Banealing_L0_archNone_batch100_e150_BVAE_50-100_picontrol_TSE5_LS500_beta0.5/tests'
+define: &dir_clm_VAE2  '/space/hall5/sitestore/eccc/crd/ccrn/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_picontrol/N1_v2_Banealing_L0_archNone_batch100_e150_BVAE_50-100_picontrol_TSE5_LS500_beta0.5/tests'
+define: &dir_clm_VAE3  '/space/hall5/sitestore/eccc/crd/ccrn/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_picontrol/N1_v2_Banealing_L0_archNone_batch100_e150_BVAE_50-100_picontrol_TSE5_LS500_beta0.5_equalweights/tests2'
+define: &dir_clm_VAE1_  '/space/hall5/sitestore/eccc/crd/ccrn/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_picontrol/N1_v2_Banealing_L0_archNone_batch100_e150_BVAE_50-100_picontrol_TSE5_LS500_beta0.5_equalweights/tests'
+define: &dir_clm_VAE3_  '/space/hall5/sitestore/eccc/crd/ccrn/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_picontrol/N1_v2_Banealing_L0_archNone_batch100_e150_BVAE_50-100_picontrol_TSE5_LS500_beta0.5_equalweights/tests'
+define: &dir_clm_cVAE1 '/space/hall5/sitestore/eccc/crd/ccrn/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_picontrol/N1_v3_Banealing_L0_archNone_batch100_e150_cEBVAE_50-100_picontrol_TSE5_LS500_beta0.25_equalweights_condembsize5/tests'
+define: &dir_clm_cVAE2 '/space/hall5/sitestore/eccc/crd/ccrn/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_picontrol/N1_v3_Banealing_L0_archNone_batch100_e150_cEBVAE_50-100_picontrol_TSE5_LS500_beta0.25_equalweights_condembsize5/tests2'
+define: &dir_clm_cVAE3 '/space/hall5/sitestore/eccc/crd/ccrn/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_picontrol/N1_v3_Banealing_L0_archNone_batch100_e150_cEBVAE_50-100_picontrol_CC1_TSE5_LS500_beta0.25_equalweights_condembsize5/tests2'
+
+
+# input files (toy_dataset)
+define: &file_toy_training   'fake_normal_historical_ensembles_196501-201412_1x1_LE'
+define: &file_toy_population 'fake_normal_historical_ensembles_2010-2014_1x1_2000LE'
+define: &file_toy_VAE1       '*saved_model_normal_based_train_sampling2_1stds_output_sampling_None'
+define: &file_toy_VAE2       '*saved_model_normal_based_train_sampling2_1stds_output_sampling_None'
+define: &file_toy_cVAE1       '*saved_model_True2_1stds_output_sampling_None'
+define: &file_toy_cVAE2       '*saved_model_True2_1.2stds_output_sampling_None_5000'
+# define: &file_toy_cVAE2       '*saved_model_True2_1.1stds*'
+
+# input files (climate dataset)
+define: &file_clm_data  'tas_piControl_LE_0101-5112'
+define: &file_clm_VAE1  '*50_saved_model_normal_based_train_sampling2_1stds'
+define: &file_clm_VAE2  '*50_saved_model_normal_based_train_sampling2_1.6stds'
+define: &file_clm_VAE3  '*50_saved_model_normal_based_train_sampling2_1.35stds_output_sampling_multinormal_based_train_sampling' 
+define: &file_clm_VAE1_  '*50_saved_model_normal_based_train_sampling2_1stds'
+define: &file_clm_VAE3_  '*50_saved_model_normal_based_train_sampling2_1.35stds' 
+define: &file_clm_cVAE1 '*50_saved_model_normal_based_train_sampling2_1stds'
+define: &file_clm_cVAE2 '*50_saved_model_normal_based_train_sampling2_1stds_output_sampling_multinormal_based_train_sampling'
+define: &file_clm_cVAE3 '*50_saved_model_normal_based_train_sampling2_1stds_output_sampling_multinormal_based_train_sampling'
+
+####################
+# input basic info #
+####################
+
+variable:    # variables (choose one -or the first one is read in)
+- tas
+
+list_data_raw:
+- population
+- train_sample
+
+list_data_toy:
+- toy_VAE1
+- toy_VAE2
+- toy_cVAE2
+- toy_cVAE1
+
+list_data_clm:
+- clm_VAE1
+- clm_VAE2
+- clm_VAE3
+- clm_VAE1_
+- clm_VAE3_
+- clm_cVAE1
+- clm_cVAE2
+- clm_cVAE3
+
+
+# toy data dictionary
+data_toy_info :
+ population :
+   dir_in  : *dir_toy_data
+   file_in : *file_toy_population
+   var_in  : fgco2 
+ train_sample: 
+   dir_in  : *dir_toy_data
+   file_in : *file_toy_training
+   var_in  : fgco2
+ toy_VAE1:
+   dir_in  : *dir_toy_VAE1
+   file_in : *file_toy_VAE1
+   var_in  : nn_adjusted
+ toy_VAE2:
+   dir_in  : *dir_toy_VAE2
+   file_in : *file_toy_VAE2
+   var_in  : nn_adjusted
+ toy_cVAE1:
+   dir_in  : *dir_toy_cVAE1
+   file_in : *file_toy_cVAE1
+   var_in  : nn_adjusted
+ toy_cVAE2:
+   dir_in  : *dir_toy_cVAE2
+   file_in : *file_toy_cVAE2
+   var_in  : nn_adjusted
+
+# climate data dictionary
+data_clm_info :
+ population :
+   dir_in  : *dir_clm_data
+   file_in : *file_clm_data
+   var_in  : tas
+ clm_VAE1:
+   dir_in  : *dir_clm_VAE1
+   file_in : *file_clm_VAE1
+   var_in  : nn_adjusted
+ clm_VAE2:
+   dir_in  : *dir_clm_VAE2
+   file_in : *file_clm_VAE2
+   var_in  : nn_adjusted
+ clm_VAE3:
+   dir_in  : *dir_clm_VAE3
+   file_in : *file_clm_VAE3
+   var_in  : nn_adjusted
+ clm_VAE1_:
+   dir_in  : *dir_clm_VAE1_
+   file_in : *file_clm_VAE1_
+   var_in  : nn_adjusted
+ clm_VAE3_:
+   dir_in  : *dir_clm_VAE3_
+   file_in : *file_clm_VAE3_
+   var_in  : nn_adjusted
+ clm_cVAE1:
+   dir_in  : *dir_clm_cVAE1
+   file_in : *file_clm_cVAE1
+   var_in  : nn_adjusted
+ clm_cVAE2:
+   dir_in  : *dir_clm_cVAE2
+   file_in : *file_clm_cVAE2
+   var_in  : nn_adjusted
+ clm_cVAE3:
+   dir_in  : *dir_clm_cVAE3
+   file_in : *file_clm_cVAE3
+   var_in  : nn_adjusted
+
+
+
+
+
+
+
+
+
+        
+        
+        
+
+
+
