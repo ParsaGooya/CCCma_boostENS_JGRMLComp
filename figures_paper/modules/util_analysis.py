@@ -27,8 +27,10 @@ def get_variance(ds,
         return ds.var(dim=dim_var)
 
 
+import pyshtools as pysh
 def power(ds,
-          anomalies=False):
+          anomalies=False,
+          Lmax = None):
 
     R_earth_km = 6371
     
@@ -38,13 +40,27 @@ def power(ds,
         ds_anoms = ds.copy()
 
     grid = pysh.SHGrid.from_array(ds_anoms)
-    coeffs = grid.expand()
-    spectrum = coeffs.spectrum(lmax=coeffs.lmax)
+    clm  = grid.expand()
+    power = clm .spectrum()
 
-    l_values = np.arange(1, len(spectrum))  # Degrees l start from 1 (skip l=0)
-    wavelengths_km = 2 * np.pi * R_earth_km / l_values
+    if Lmax is None:
+        Lmax = power.size - 1
+    elif Lmax > power.size - 1:
+        grid = grid.expand().expand_grid(lmax=Lmax)
+        clm  = grid.expand()
+        power = clm .spectrum()
+    else:
+        power = power[:Lmax]
 
-    return spectrum[1:], wavelengths_km
+
+    degrees = np.arange(Lmax + 1)
+
+
+    wavelength_km = np.full_like(degrees, np.nan, dtype=float)
+    wavelength_km[1:] = 2 * np.pi * R_earth_km / degrees[1:]
+
+
+    return power, wavelength_km
 
 
 
@@ -74,4 +90,15 @@ def doPCA(ds, n_components=2,  fitted_pca = None, return_explained_variance = Tr
         return ds_out,pca, pca.explained_variance_ratio_
     else:
         return ds_out, pca
-    
+
+
+
+def corr_patt(ds1, ds2 , mask=None,): # centered
+    '''
+    pattern correlation --
+    '''
+    dim_xy = ['lat','lon']
+    covariance = ((ds1 - ds1.mean(dim_xy))*(ds2 - ds2.mean(dim_xy))).mean(dim_xy)
+    result = (covariance/(ds1.std(dim_xy)*ds2.std(dim_xy)))
+
+    return result   

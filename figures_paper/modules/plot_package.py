@@ -6,7 +6,7 @@ from matplotlib import ticker
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature    
 from pathlib import Path
-
+from scipy.stats import skew
 
 ##
 def plot_ts(list_ds,
@@ -17,7 +17,9 @@ def plot_ts(list_ds,
             xlabel='',
             ylabel='',
             bbox=(.87,.5,.5,.5),
+            text_dict = None, 
             figsize=(6,3),
+            legend = True,
             title='',
             ylim = None,
             dir_name=None,
@@ -57,14 +59,21 @@ def plot_ts(list_ds,
 
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
-        
-    plt.legend(loc='best',
+    if legend:
+        plt.legend(loc='best',
                bbox_to_anchor=bbox,
                handlelength=1,
                ncol=1,
                frameon=False) 
     if ylim is not None:
         plt.ylim(ylim )
+
+    if text_dict is not None:
+
+        plt.text(    text_dict['x'], text_dict['y'],               # relative position
+        text_dict['text'], 
+        fontsize = text_dict['fontsize'],
+        transform=plt.gca().transAxes)  # use axes coordinates
         
     if save:
         Path(dir_name).mkdir(parents=True,
@@ -88,6 +97,10 @@ def plot_qq(list_data,
             ylabel='Temperature Anomalies ($^\circ$C)',
             title='Quantile-Quantile Plot',
             bbox=(.87,.5,.5,.5),
+            legend = True,
+            fontsize = 15, 
+            text_dict = None,
+            add_error = False,
             dir_name=None,
             file_name=None,
             scatter = True,
@@ -105,18 +118,18 @@ def plot_qq(list_data,
 
     pnt_min = box[0,:]
     pnt_max = box[1,:]
-    
+
     ax = plt.gca()
     ax.axline(pnt_min,
               pnt_max,
-              color='k',
+              color='tab:blue' if idata_ref == 'train_sample'  else 'k',
               linestyle = 'dotted')
     ax.set_xlim(pnt_min[0],pnt_max[0])
     ax.set_ylim(pnt_min[1],pnt_max[1])
     
-    ax.set_title(title)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
+    ax.set_title(title, fontsize = fontsize)
+    ax.set_xlabel(xlabel, fontsize = fontsize)
+    ax.set_ylabel(ylabel, fontsize = fontsize)
 
     # var = list(dict_data[idata_ref].data_vars)[0]
     
@@ -133,13 +146,17 @@ def plot_qq(list_data,
             s = dict_plt[idata]['s']
         except:
             s = None
+        if add_error:
+            err = f' ({str(np.round(np.sqrt(((da_x- da_y)**2).mean()),2))})'
+        else:
+            err = ''
         if scatter:
             ax.scatter(da_x,
                    da_y,
                    color=dict_plt[idata]['color'],
                    facecolor=dict_plt[idata]['facecolor'],
                    marker=dict_plt[idata]['marker'],
-                   label=dict_plt[idata]['label'],
+                   label=dict_plt[idata]['label'] + err,
                     linestyle = dict_plt[idata]['linestyle'],
                    alpha = alpha,
                    s = s) 
@@ -150,15 +167,24 @@ def plot_qq(list_data,
                    linestyle = dict_plt[idata]['linestyle'],
                 #    facecolor=dict_plt[idata]['facecolor'],
                 #    marker=dict_plt[idata]['marker'],
-                   label=dict_plt[idata]['label'],
+                   label=dict_plt[idata]['label'] + err,
                    alpha = alpha)             
-
-    plt.legend(loc='best',
+    if legend:
+        plt.legend(loc='best',
                bbox_to_anchor=bbox,
                handlelength=1,
                ncol=1,
+               fontsize = fontsize,
                frameon=False) 
+    if text_dict is not None:
 
+        plt.text(    text_dict['x'], text_dict['y'],               # relative position
+        text_dict['text'], 
+                fontsize = text_dict['fontsize'],
+        transform=plt.gca().transAxes)  # use axes coordinates
+
+    plt.rc('xtick',labelsize=fontsize)
+    plt.rc('ytick',labelsize=fontsize)
         
     if save:
         Path(dir_name).mkdir(parents=True,
@@ -310,16 +336,22 @@ def plot_qq(list_data,
 def plot_hist(list_data,
               dict_data,
               dict_plt,
+              figsize = (8,6),
               var='tas',
-              season=[12,1,2],
+              seasons_dict = {'DJF' : [12,1,2], 'JJA' : [6,7,8], 'D' : [12],  'A' : [8], 'Full' : np.arange(1,13)}, 
+              season='Full',
+              mean_season = False,
               ylog=True,
               nbins=20,
               density=True,
+              fontsize = 10,
               xmin=-3,
               xmax=3,
               xlabel='',
               ylabel='Density',
+              skewness = False,
               title='Histogram',
+              text_dict = None, 
               bbox=(.86,.5,.5,.5),
               legend_bool = None,
               fig_dir=None,
@@ -329,12 +361,16 @@ def plot_hist(list_data,
     '''
     plot histogram
     '''
+    plt.figure(figsize = figsize)
     if type(legend_bool) in (list, tuple):
         assert len(legend_bool) == len(list_data)
 
     for ind, idata in enumerate(list_data):
 
-        data = dict_data[idata][var].sel(time=season).to_numpy().flatten()            
+        data = dict_data[idata][var].sel(time=seasons_dict[season])
+        if mean_season:
+            data = data.mean('time')
+        data = data.to_numpy().flatten()            
         try:
             alpha = dict_plt[idata]['alpha_hist']
         except:
@@ -346,6 +382,15 @@ def plot_hist(list_data,
                 label = None
         else:
             label = dict_plt[idata]['label']
+        
+        if skewness:
+            skn = skew(data, bias=False)
+            skn = f' ({str(np.round(skn,2))})'
+        else:
+            skn = ''
+        
+        if label is not None:
+            label = label  + skn
 
         (counts,
          bins,
@@ -363,14 +408,32 @@ def plot_hist(list_data,
     if legend_bool is not None:
         plt.legend(loc='best',
                 bbox_to_anchor=bbox,
+                fontsize = 12,
                 handlelength=1,
                 ncol=1,
                 frameon=False)         
 
     plt.xlim((xmin,xmax))
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
+    plt.xlabel(xlabel, fontsize = fontsize)
+    plt.ylabel(ylabel, fontsize= fontsize)
     plt.title(title)
+    plt.rc('xtick',labelsize=fontsize)
+    plt.rc('ytick',labelsize=fontsize)
+    if season != 'Full':
+        if text_dict is None:
+            plt.text(    0.05, 0.95,               # relative position
+            season,    fontsize = 12,
+            transform=plt.gca().transAxes)
+        else:
+            plt.text(    text_dict['x'], text_dict['y'],               # relative position
+            season + f' {text_dict["text"]}', fontsize = text_dict['fontsize'],
+            transform=plt.gca().transAxes)    
+    elif text_dict is not None:
+            plt.text(    text_dict['x'], text_dict['y'],               # relative position
+            text_dict["text"],   fontsize = text_dict['fontsize'],
+            transform=plt.gca().transAxes)   
+  # use axes coordinates
+
 
     if save:
         Path(fig_dir).mkdir(parents=True, exist_ok=True)

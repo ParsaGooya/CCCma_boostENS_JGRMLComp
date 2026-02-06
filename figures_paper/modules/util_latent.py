@@ -19,26 +19,26 @@ def extract_params(model_dir):
     file = open(path)
     content=file.readlines()
     for line in content:
-        key = line.split('\t')[0]
-        try:
-            value = line.split('\t')[1].split('\n')[0]
-        except:
-            value = line.split('\t')[1]
-        try:    
-            params[key] = eval(value)
-        except:
-            if key == 'ensemble_list':
-                ls = []
-                for item in value.split('[')[1].split(']')[0].split(' '):
-                    try:
-                        ls.append(eval(item))
-                    except:
-                        pass
-                params[key] = ls
-            else:
-                params[key] = value
+        if '\t' in line:
+            key = line.split('\t')[0]
+            try:
+                value = line.split('\t')[1].split('\n')[0]
+            except:
+                value = line.split('\t')[1]
+            try:    
+                params[key] = eval(value)
+            except:
+                if key == 'ensemble_list':
+                    ls = []
+                    for item in value.split('[')[1].split(']')[0].split(' '):
+                        try:
+                            ls.append(eval(item))
+                        except:
+                            pass
+                    params[key] = ls
+                else:
+                    params[key] = value
     return params
-
 
 def prepare_data_for_AE_toy(ds_in, model_dir, model_year = 2012):
 
@@ -447,31 +447,48 @@ def prepare_data_for_AE_clim(ds_in, model_dir, model_year = 2012):
     extra_predictors = params['extra_predictors']
     batch_normalization = params['batch_normalization']
 
-    params["version"] = eval(model_dir.split('/')[-1].split('_')[1][1])  
+    params["version"] = eval(model_dir.split('/')[-1].split('_')[1][1:])  
         
 
+
     if params['version'] == 1:
-            
-            params['forecast_preprocessing_steps'] = [
-            ('standardize', Standardizer())]
-            params['forecast_ensemble_mean_preprocessing_steps'] = [
-            ('standardize', Standardizer())]
-            params['observations_preprocessing_steps'] = []
+
+        params['forecast_preprocessing_steps'] = [
+        ('standardize', Standardizer())]
+        params['forecast_ensemble_mean_preprocessing_steps'] = [
+        ('standardize', Standardizer())]
+        params['observations_preprocessing_steps'] = []
+
 
     elif params['version'] == 2:
 
-            params['forecast_preprocessing_steps'] = [
-            ('standardize', Standardizer(axis = (0,2)))]
-            params['forecast_ensemble_mean_preprocessing_steps'] = [
-            ('standardize', Standardizer(axis = (0,)))]
-            params['observations_preprocessing_steps'] = []
+        params['forecast_preprocessing_steps'] = [
+        ('standardize', Standardizer(axis = (0,2)))]
+        params['forecast_ensemble_mean_preprocessing_steps'] = [
+        ('standardize', Standardizer(axis = (0,)))]
+        params['observations_preprocessing_steps'] = []
+
+    elif params['version'] == 2.1:
+
+        params['forecast_preprocessing_steps'] = [
+        ('standardize', Standardizer(axis = (0,2)))]
+        params['forecast_ensemble_mean_preprocessing_steps'] = []
+        params['observations_preprocessing_steps'] = []
+
     elif params['version'] == 3:
 
-            params['forecast_preprocessing_steps'] = [
-            ('standardize', Standardizer(axis = (0,1,2)))]
-            params['forecast_ensemble_mean_preprocessing_steps'] = [
-            ('standardize', Standardizer(axis = (0,1)))]
-            params['observations_preprocessing_steps'] = []
+        params['forecast_preprocessing_steps'] = [
+        ('standardize', Standardizer(axis = (0,1,2)))]
+        params['forecast_ensemble_mean_preprocessing_steps'] = [
+        ('standardize', Standardizer(axis = (0,1)))]
+        params['observations_preprocessing_steps'] = []
+
+    else:
+        params['forecast_preprocessing_steps'] = []
+        params['observations_preprocessing_steps'] = []
+        params['forecast_ensemble_mean_preprocessing_steps'] = []
+    
+
 
     forecast_preprocessing_steps = params["forecast_preprocessing_steps"]
     forecast_ensemble_mean_preprocessing_steps = params["forecast_ensemble_mean_preprocessing_steps"]
@@ -534,18 +551,29 @@ def prepare_data_for_AE_clim(ds_in, model_dir, model_year = 2012):
 
 
 
-    ds_em = ds_raw_ensemble.sel(ensembles = params['ensemble_list']).mean('ensembles')
+    ds_em = ds_raw_ensemble.isel(ensembles = params['ensemble_list']).mean('ensembles')
     if params['remove_ensemble_mean']:  
         ds = ds_raw_ensemble - ds_raw_ensemble.mean('ensembles')
     else:
         ds =  ds_raw_ensemble.copy()
 
-    ds_pipeline = PreprocessingPipeline(forecast_preprocessing_steps).fit(ds[:n_train,...], mask=preprocessing_mask_fct)
-    ds = ds_pipeline.transform(ds)
 
-    ds_em_pipeline = PreprocessingPipeline(forecast_ensemble_mean_preprocessing_steps).fit(ds_em[:n_train,...], mask=preprocessing_mask_fct[:,:,0,...])
-    ds_em = ds_em_pipeline.transform(ds_em)
-    
+    if params['version'] != 2.1:
+
+            ds_em_pipeline = PreprocessingPipeline(forecast_ensemble_mean_preprocessing_steps).fit(ds_em[:n_train,...], mask=preprocessing_mask_fct)
+            ds_em = ds_em_pipeline.transform(ds_em)
+
+            if params['non_random_decoder_initialization'] == 'use_condition':
+                ds_pipeline = ds_em_pipeline
+                ds = ds_em_pipeline.transform(ds.transpose('year','ensembles', ...)).transpose(*ds.dims)
+            else:
+                ds_pipeline = PreprocessingPipeline(forecast_preprocessing_steps).fit(ds[:n_train,...], mask=preprocessing_mask_fct)
+                ds = ds_pipeline.transform(ds)
+            
+    else:
+            ds_pipeline = PreprocessingPipeline(forecast_preprocessing_steps).fit(ds[:n_train,...], mask=preprocessing_mask_fct)
+            ds = ds_pipeline.transform(ds)
+            ds_em = ds_pipeline.transform(ds_em.expand_dims('ensembles', axis  =2)).squeeze()    
     ###
     year_max = ds[:n_train + 1].year[-1].values 
 
@@ -627,7 +655,7 @@ def extract_latent_space_clim(ds_train_, ds_train_conds_, params):
     
     latent_dim = hidden_dims[0][-1]
     net = model(img_dim, hidden_dims[0], hidden_dims[1], added_features_dim=add_feature_dim, append_mode=params['append_mode'], batch_normalization=batch_normalization, dropout_rate=dropout_rate, VAE = params['BVAE'], condition_embedding_dims = params['condition_embedding_size'], full_conditioning = params['full_conditioning'], condition_dependant_latent = params["condition_dependant_latent"], min_posterior_variance = (params['min_posterior_variance']), prior_flow = params['prior_flow'], condemb_to_decoder = params['condemb_to_decoder'] ,device = device)
-    net.load_state_dict(torch.load(glob.glob(model_dir+ '/Saved_models' + f'/*-{model_year}*.pth')[0], map_location=torch.device('cpu')))               
+    net.load_state_dict(torch.load(glob.glob(model_dir+ '/Checkpoints' + f'/*-{model_year}*.pth')[0], map_location=torch.device('cpu')))               
     net.to(device)
     net.eval()
     print(net)
@@ -648,7 +676,7 @@ def extract_latent_space_clim(ds_train_, ds_train_conds_, params):
         time_features = np.stack([y, lt, msin, mcos, tsin, tcos], axis=1)
         time_features = time_features[..., [feature_indices[k] for k in time_features_list]]
 
-    ds_mu = xr.concat([xr.full_like(ds_train[...,-1].squeeze().drop(['ref','lat','lon']), np.NAN) for _ in range(latent_dim)],dim = 'mu').transpose('time','ensembles',...,'mu').rename('latent')
+    ds_mu = xr.concat([xr.full_like(ds_train[...,-1].squeeze('channels').drop(['ref','lat','lon']), np.NAN) for _ in range(latent_dim)],dim = 'mu').transpose('time','ensembles',...,'mu').rename('latent')
     ds_var = ds_mu.copy()
     ds_samples = ds_mu.copy()
     ds_mu_cond = None
