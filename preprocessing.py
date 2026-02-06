@@ -395,7 +395,7 @@ class Spatialnanremove: ## PG
 
             output = self.shape
             if output.shape[2] < data.shape[2]:
-                output = xr.concat([output.isel(ensembles = 2).expand_dims('ensembles',axis = 2) for _ in range(data.shape[2])], dim = 'ensembles').assign_coords(ensembles = np.arange(1, data.shape[2] + 1))
+                output = xr.concat([output.isel(ensembles = 0).expand_dims('ensembles',axis = 2) for _ in range(data.shape[2])], dim = 'ensembles').assign_coords(ensembles = np.arange(1, data.shape[2] + 1))
             output[:] =  data[:]
             return output.unstack().combine_first(self.reference_shape)
 
@@ -522,15 +522,17 @@ class Standardizer:
     def transform(self, data):
         if self.axis is not None:
             if type(data) == np.ndarray:
-                self.transpose = (*self.axis, *np.delete(np.arange(len(data.shape)), self.axis))
-                self.transpose_back = self.transpose
+                # self.transpose = (*self.axis, *np.delete(np.arange(len(data.shape)), self.axis))
+                # self.transpose_back = self.transpose
+                raise NotImplementedError
             else:
                 self.transpose = tuple([data.dims[i] for i in (*self.axis, *np.delete(np.arange(len(data.shape)), self.axis))])
                 self.transpose_back = data.dims
         else:
             if type(data) == np.ndarray:
-                self.transpose =  tuple(np.arange(len(data.shape)))
-                self.transpose_back = self.transpose
+                # self.transpose =  tuple(np.arange(len(data.shape)))
+                # self.transpose_back = self.transpose
+                raise NotImplementedError
             else:
                 self.transpose = data.dims
                 self.transpose_back =  data.dims
