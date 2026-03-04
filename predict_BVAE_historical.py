@@ -882,7 +882,7 @@ if __name__ == "__main__":
 
     var = 'tas'
     fake_data = 'pi'
-    out_dir_x  = f'/space/hall5/sitestore/eccc/crd/ccrn/users/rpg002/output/{var}/SOM-FFN/results/Autoencoder/run_set_final_historical_long'
+    out_dir_x  = f'/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/{var}/SOM-FFN/results/Autoencoder/run_set_final_historical_long'
     out_dir    = f'{out_dir_x}/ST2026_v2.1_VAL5_Banealing_L0_archNone_batch100_e100_cosine_lr_scheduler_cEBVAE_50-100_XEnsCond_historical_TSE2_LS500_condembsize2_EQW'  
                                 
               

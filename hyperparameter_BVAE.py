@@ -823,7 +823,7 @@ if __name__ == "__main__":
 
     ##############################################################################################################################
     
-    out_dir_x  = f'/space/hall5/sitestore/eccc/crd/ccrn/users/rpg002/output/fgco2_ems/SOM-FFN/results/{params["model"].__name__}/run_set_8_toy/Model_tunning/arch{params["arch"]}/'
+    out_dir_x  = f'/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/fgco2_ems/SOM-FFN/results/{params["model"].__name__}/run_set_8_toy/Model_tunning/arch{params["arch"]}/'
     out_dir_x = out_dir_x + f'NV{params["size_val_years"]}_batch_lr_reg_tunning_v{params["version"]}'
 
     

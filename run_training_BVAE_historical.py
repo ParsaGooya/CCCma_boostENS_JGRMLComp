@@ -947,7 +947,7 @@ if __name__ == "__main__":
         params['num_warmup_epchs'] = 5
         params['min_lr'] = 0.0
     
-    out_dir_x  = f'/space/hall5/sitestore/eccc/crd/ccrn/users/rpg002/output/{var}/SOM-FFN/results/{params["model"].__name__}/run_set_final_historical_long'
+    out_dir_x  = f'/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/{var}/SOM-FFN/results/{params["model"].__name__}/run_set_final_historical_long'
     # out_dir_xx = f'{out_dir_x}/git_data_20230426'
     # out_dir    = f'{out_dir_xx}/SPNA' 
     if type(params['beta']) == dict:
