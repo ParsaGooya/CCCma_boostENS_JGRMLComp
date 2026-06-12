@@ -7,19 +7,26 @@ import random
 
 class XArrayDataset(Dataset):
 
-    def __init__(self, data: xr.DataArray, target: xr.DataArray, extra_predictors : xr.DataArray = None, mask=None,lead_time = None,  lead_time_mask = None,  time_features=None,  in_memory=True, to_device=None, aligned = False, year_max = None, max_month = None,  model = 'Autoencoder', VAE = None, BVAE = None, conditional_embedding = False, cross_member_training = False):
+    def __init__(self, data: xr.DataArray, 
+                    target: xr.DataArray, 
+                    mask=None,
+                    lead_time = None,  
+                    time_features=None,  
+                    in_memory=True, 
+                    to_device=None, 
+                    aligned = False, 
+                    year_max = None, 
+                    max_month = None,  
+                    model = 'Autoencoder', 
+                    boosted_ensemble_size = None, 
+                    conditional_embedding = False, 
+                    cross_member_training = False):
+
         self.mask = mask
         self.atm_co2_features = None
         self.conditional_embedding = conditional_embedding
         self.cross_member_training = cross_member_training
-
-        # if lead_time is None:
         self.data = data
-        # else:
-        #     self.data = data[:,np.array([lead_time]).flatten() - 1,]
-        #     if self.mask is not None:
-        #         self.mask = self.mask[:,np.array([lead_time]).flatten() - 1]
-
         self.data = self.data.stack(flattened=('year','lead_time')).transpose('flattened',...)
         self.target = target.stack(flattened=('year','month')).transpose('flattened',...)
 
@@ -37,27 +44,11 @@ class XArrayDataset(Dataset):
             target_idx = (years_in_months + self.data.lead_time - 1).to_numpy()
         self.target = self.target[target_idx,...]
 
-        if lead_time_mask is not None:
-            self.lead_time_mask = xr.ones_like(self.target).rename({'month' : 'lead_time'})
-            self.lead_time_mask  = self.lead_time_mask.where(self.lead_time_mask.lead_time <= lead_time_mask*12, 0.25)
-        else:
-            self.lead_time_mask = None
         
         if lead_time is not None:
             self.data = self.data.where((self.data.lead_time >=  (lead_time - 1) * 12 + 1) & (self.data.lead_time < (lead_time *12 )+1), drop = True)
             self.target = self.target.where((self.target.month >=  (lead_time - 1) * 12 + 1) & (self.target.month < (lead_time *12 )+1), drop = True)
 
-        if extra_predictors is not None:
-                
-                self.use_time_features = True
-                self.extra_predictors = extra_predictors.stack(flattened=('year','lead_time')).transpose('flattened',...)
-                try:
-                    self.extra_predictors = self.extra_predictors.sel(flattened = self.data.flattened)
-                except:
-                    raise ValueError("Extra predictors not available at the same time points as the predictors.") 
-                self.extra_predictors  = (self.extra_predictors -self.extra_predictors.min())  / (self.extra_predictors.max() - self.extra_predictors.min()).values
-        else:
-            self.extra_predictors = None
 
         if time_features is not None:
 
@@ -82,15 +73,10 @@ class XArrayDataset(Dataset):
             self.time_features = np.stack([t / max_month, lt, msin, mcos, tsin, tcos], axis=1) ## remmeber I replaced y with t/max_month at the first element of the list.
             self.time_features = self.time_features[..., [feature_indices[k] for k in self.time_features_list]]
 
-        else:
-            if self.extra_predictors is None:
-                self.use_time_features = False
-        if VAE is not None:
-            self.data_std = self.data.std('ensembles').rename({'lead_time' : 'month'})
-            self.data = self.data.mean('ensembles')
-            self.target = xr.concat([self.target,self.data_std  ], dim = 'channels')
 
-        if BVAE is not None:
+
+
+        if boosted_ensemble_size is not None:
             self.data_std = self.data.std('ensembles').rename({'lead_time' : 'month'})
             self.target = xr.concat([self.target,self.data_std  ], dim = 'channels')
             self.data = self.data.rename({'ensembles' : 'batch'})
@@ -127,21 +113,13 @@ class XArrayDataset(Dataset):
             if self.use_time_features:
                 self.time_features = self.time_features[target_idx,...] ## PG: sample time features with the same indices due to the unwrapping the ensemble dim
 
-            if self.extra_predictors is not None:
-                if 'ensembles' in self.extra_predictors.dims:
-                    self.extra_predictors = self.extra_predictors.reset_index('lead_time','year').rename({'flattened':'flat'}) 
-                    self.extra_predictors['flat'] = np.arange(0,len(self.extra_predictors.flat))  ## PG: create new coords for the ('year','lead_time') multi-index that shows indices
-                    self.extra_predictors = self.extra_predictors.stack(flattened=('ensembles','flat')).transpose('flattened',...) ## PG: Unwrap the ensemble dim    
-                else:
-                    self.extra_predictors = self.extra_predictors[target_idx,...] 
+
 
         if self.use_time_features:
 
             if  model in ['SCNN' ,'UNet2', 'UNet2_decoupled','CNN', 'CNN_mean']:
                 self.time_features = np.concatenate([np.broadcast_to(self.time_features[:, ind,None, None, None],  self.data.isel(channels = 0).expand_dims('channels', axis=1).shape) for ind in range(len(time_features))] , axis = 1)
             
-            if self.extra_predictors is not None:
-                    self.time_features = np.concatenate([self.time_features, self.extra_predictors.data],axis = 1)
 
         
 
@@ -151,8 +129,7 @@ class XArrayDataset(Dataset):
             self.target = torch.from_numpy(self.target.to_numpy()).float()
             if conditional_embedding: 
                 self.condition_target_ids = torch.from_numpy(self.condition_target_ids) 
-            if self.lead_time_mask is not None:
-                self.lead_time_mask = torch.from_numpy(self.lead_time_mask.to_numpy()).float()
+ 
 
             if self.use_time_features:
                 self.time_features = torch.from_numpy(self.time_features).float()
@@ -163,8 +140,7 @@ class XArrayDataset(Dataset):
                 self.target.to(to_device)
                 if conditional_embedding: 
                     self.condition_target_ids.to(to_device)
-                if self.lead_time_mask is not None:
-                    self.lead_time_mask = self.lead_time_mask.to(to_device)
+
                 if self.use_time_features:
                     self.time_features = self.time_features.to(to_device)
             
@@ -173,15 +149,12 @@ class XArrayDataset(Dataset):
         y = self.target[index,...]
         if self.conditional_embedding:
             idx = self.condition_target_ids[index,...]
-        if self.lead_time_mask is not None:
-            m = self.lead_time_mask[index,...]
+
 
         if torch.is_tensor(x):
 
-            if self.lead_time_mask is not None:
-                y_ = (y, m)
-            else:
-                y_ = y
+
+            y_ = y
 
             if self.use_time_features: 
                 t = self.time_features[index,...]
@@ -203,11 +176,7 @@ class XArrayDataset(Dataset):
             x = torch.from_numpy(x.to_numpy()).float()
             y = torch.from_numpy(y.to_numpy()).float()
 
-            if self.lead_time_mask is not None:
-                m = torch.from_numpy(m.to_numpy()).float()
-                y_ = (y, m)
-            else:
-                y_ = y
+            y_ = y
             
             if self.use_time_features:
                 t = self.time_features[index,...]
@@ -264,46 +233,4 @@ class XArrayDataset(Dataset):
                         return shuffled_arr
                 else:
                     return shuffled_arr
-
-class ConvLSTMDataset(Dataset):
-
-    def __init__(self, data: xr.DataArray, n_timesteps, moving_window=1, mask=None, lead_time=None, in_memory=True, to_device=None):
-        self.mask = mask
-        if moving_window is None:
-            moving_window = n_timesteps + 1
-        if lead_time is not None:
-            data = data[:,np.array([lead_time]).flatten() - 1,]
-  
-        dataset = []
-        for col in range(data.shape[1]):
-            lt = data[:,col,...]
-            if self.mask is not None:
-                lt = lt[~self.mask[:,col]]
-            x = np.flip(lt, axis=0)
-            dataset.append(np.vstack([[np.flip(x[i:i + n_timesteps + 1,...], axis=0) for i in range(0, len(x) - n_timesteps, moving_window)]]))
-        dataset = np.vstack(dataset)
-        self.data = dataset[:,:-1,...]
-        self.target = dataset[:,-1,...]
-
-        if in_memory:
-            self.data = torch.from_numpy(self.data).float()
-            self.target = torch.from_numpy(self.target).float()
-            if to_device:
-                self.data.to(to_device)
-                self.target.to(to_device)
-            
-    def __getitem__(self, index):
-        x = self.data[index,...]
-        y = self.target[index,...]
-        if torch.is_tensor(x):
-            return x, y
-        else:
-            x = torch.from_numpy(x).float()
-            y = torch.from_numpy(y).float()
-            return x, y
-
-    def __len__(self):
-        return len(self.data)
-
-
 

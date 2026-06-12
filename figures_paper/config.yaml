@@ -3,45 +3,45 @@
 dir_source   : /home/rpg002/Diagnostics/cccma_boostENS/CCCma_boostENS_JGRMLComp/figures_paper
 
 # output path 
-dir_frnt_out : /space/hall7/sitestore/eccc/crd/cccma/users/rpg002/DCPP_Diagnostics/BoostEnsemblev2
+dir_frnt_out : /XXXX/cccma/users/rpg002/DCPP_Diagnostics/BoostEnsemblev2-RV1
 
 # input paths (toy datasets)
-define: &dir_toy_data '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/data/fgco2/simulation/fake_test'
-define: &dir_toy_VAE1 '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/fgco2_ems/SOM-FFN/results/Autoencoder/run_set_final_toy/N2_v2_Banealing_L0_archNone_batch100_e100_BVAE_10-1_NnRandDecodInit_RmEnsMn_hist_fake_data_normal_beta0.1_Step10_weightedMSE_TSE20/tests2'
-define: &dir_toy_VAE2 '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/fgco2_ems/SOM-FFN/results/Autoencoder/run_set_final_toy/N2_v2_Banealing_L0_archNone_batch100_e100_BVAE_10-1_NnRandDecodInit_RmEnsMn_hist_fake_data_normal_beta0.1_Step10_weightedMSE_TSE20/tests2' 
-define: &dir_toy_cVAE1 '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/fgco2_ems/SOM-FFN/results/Autoencoder/run_set_final_toy/N2_v3_Banealing_L0_archNone_batch100_e50_cBVAElatentdependant_10-1_NnRandDecodInit_hist_fake_data_normal_beta0.2_weightedMSE_TSE20/tests2'
-define: &dir_toy_cVAE2 '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/fgco2_ems/SOM-FFN/results/Autoencoder/run_set_final_toy/N2_v3_Banealing_L0_archNone_batch100_e50_cBVAElatentdependant_10-1_NnRandDecodInit_hist_fake_data_normal_beta0.2_weightedMSE_TSE20/tests2'
-# define: &dir_toy_cVAE2 '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/fgco2_ems/SOM-FFN/results/Autoencoder/run_set_final_toy/N2_v3_Banealing_L0_archNone_batch100_e50_cBVAElatentdependant_10-1_NnRandDecodInit_hist_fake_data_normal_pi_beta0.2_weightedMSE_TSE20/tests2'
+define: &dir_toy_data '/XXXX/cccma/users/rpg002/data/fgco2/simulation/fake_test'
+define: &dir_toy_VAE1 '/XXXX/cccma/users/rpg002/output/fgco2_ems/SOM-FFN/results/Autoencoder/run_set_final_toy/N2_v2_Banealing_L0_archNone_batch100_e100_BVAE_10-1_NnRandDecodInit_RmEnsMn_hist_fake_data_normal_beta0.1_Step10_weightedMSE_TSE20/tests2'
+define: &dir_toy_VAE2 '/XXXX/cccma/users/rpg002/output/fgco2_ems/SOM-FFN/results/Autoencoder/run_set_final_toy/N2_v2_Banealing_L0_archNone_batch100_e100_BVAE_10-1_NnRandDecodInit_RmEnsMn_hist_fake_data_normal_beta0.1_Step10_weightedMSE_TSE20/tests2' 
+define: &dir_toy_cVAE1 '/XXXX/cccma/users/rpg002/output/fgco2_ems/SOM-FFN/results/Autoencoder/run_set_final_toy/N2_v3_Banealing_L0_archNone_batch100_e50_cBVAElatentdependant_10-1_NnRandDecodInit_hist_fake_data_normal_beta0.2_weightedMSE_TSE20/tests2'
+define: &dir_toy_cVAE2 '/XXXX/cccma/users/rpg002/output/fgco2_ems/SOM-FFN/results/Autoencoder/run_set_final_toy/N2_v3_Banealing_L0_archNone_batch100_e50_cBVAElatentdependant_10-1_NnRandDecodInit_hist_fake_data_normal_beta0.2_weightedMSE_TSE20/tests2'
+# define: &dir_toy_cVAE2 '/XXXX/cccma/users/rpg002/output/fgco2_ems/SOM-FFN/results/Autoencoder/run_set_final_toy/N2_v3_Banealing_L0_archNone_batch100_e50_cBVAElatentdependant_10-1_NnRandDecodInit_hist_fake_data_normal_pi_beta0.2_weightedMSE_TSE20/tests2'
 
-define: &dir_clm_data  '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/data/tas/piControl'
-define: &dir_clm_VAE1  '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_picontrol/N1_v2_Banealing_L0_archNone_batch100_e150_BVAE_50-100_picontrol_TSE5_LS500_beta0.5/tests'
-define: &dir_clm_VAE2  '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_picontrol/N1_v2_Banealing_L0_archNone_batch100_e150_BVAE_50-100_picontrol_TSE5_LS500_beta0.5/tests'
-define: &dir_clm_VAE3  '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_picontrol/N1_v2_Banealing_L0_archNone_batch100_e150_BVAE_50-100_picontrol_TSE5_LS500_beta0.5_equalweights/tests2'
-define: &dir_clm_VAE1_  '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_picontrol/N1_v2_Banealing_L0_archNone_batch100_e150_BVAE_50-100_picontrol_TSE5_LS500_beta0.5_equalweights/tests'
-define: &dir_clm_VAE3_  '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_picontrol/N1_v2_Banealing_L0_archNone_batch100_e150_BVAE_50-100_picontrol_TSE5_LS500_beta0.5_equalweights/tests'
-define: &dir_clm_cVAE1 '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_picontrol/N1_v3_Banealing_L0_archNone_batch100_e150_cEBVAE_50-100_picontrol_TSE5_LS500_beta0.25_equalweights_condembsize5/tests'
-define: &dir_clm_cVAE2 '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_picontrol/N1_v3_Banealing_L0_archNone_batch100_e150_cEBVAE_50-100_picontrol_TSE5_LS500_beta0.25_equalweights_condembsize5/tests2'
-define: &dir_clm_cVAE3 '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_picontrol/N1_v3_Banealing_L0_archNone_batch100_e150_cEBVAE_50-100_picontrol_CC1_TSE5_LS500_beta0.25_equalweights_condembsize5/tests2'
+define: &dir_clm_data  '/XXXX/cccma/users/rpg002/data/tas/piControl'
+define: &dir_clm_VAE1  '/XXXX/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_picontrol/N1_v2_Banealing_L0_archNone_batch100_e150_BVAE_50-100_picontrol_TSE5_LS500_beta0.5/tests'
+define: &dir_clm_VAE2  '/XXXX/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_picontrol/N1_v2_Banealing_L0_archNone_batch100_e150_BVAE_50-100_picontrol_TSE5_LS500_beta0.5/tests'
+define: &dir_clm_VAE3  '/XXXX/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_picontrol/N1_v2_Banealing_L0_archNone_batch100_e150_BVAE_50-100_picontrol_TSE5_LS500_beta0.5_equalweights/tests2'
+define: &dir_clm_VAE1_  '/XXXX/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_picontrol/N1_v2_Banealing_L0_archNone_batch100_e150_BVAE_50-100_picontrol_TSE5_LS500_beta0.5_equalweights/tests'
+define: &dir_clm_VAE3_  '/XXXX/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_picontrol/N1_v2_Banealing_L0_archNone_batch100_e150_BVAE_50-100_picontrol_TSE5_LS500_beta0.5_equalweights/tests'
+define: &dir_clm_cVAE1 '/XXXX/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_picontrol/N1_v3_Banealing_L0_archNone_batch100_e150_cEBVAE_50-100_picontrol_TSE5_LS500_beta0.25_equalweights_condembsize5/tests'
+define: &dir_clm_cVAE2 '/XXXX/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_picontrol/N1_v3_Banealing_L0_archNone_batch100_e150_cEBVAE_50-100_picontrol_TSE5_LS500_beta0.25_equalweights_condembsize5/tests2'
+define: &dir_clm_cVAE3 '/XXXX/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_picontrol/N1_v3_Banealing_L0_archNone_batch100_e150_cEBVAE_50-100_picontrol_CC1_TSE5_LS500_beta0.25_equalweights_condembsize5/tests2'
 
 
-define: &dir_hist_data  '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/data/tas/historical/CanESM5'
+define: &dir_hist_data  '/XXXX/cccma/users/rpg002/data/tas/historical/CanESM5'
 
-# define: &dir_hist_VAE1  '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical/ST2010_v2_VAL5_Banealing_L0_archNone_batch100_e100_cosine_lr_scheduler_cEBVAE_50-100_historical_TSE10_LS500_condembsize5_EQW_YES/tests'
-# define: &dir_hist_VAE2  '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical/ST2010_v2_VAL5_Banealing_L0_archNone_batch100_e100_cosine_lr_scheduler_cEBVAE_50-100_historical_TSE10_LS500_condembsize5_EQW_YES/tests'
-# define: &dir_hist_VAE3  '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical/ST2010_v2_VAL5_Banealing_L0_archNone_batch100_e100_cosine_lr_scheduler_cEBVAE_50-100_historical_TSE10_LS500_condembsize5_EQW_YES/tests'
-# define: &dir_hist_VAE4  '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical/ST2010_v2_VAL5_Banealing_L0_archNone_batch100_e100_cosine_lr_scheduler_cEBVAE_50-100_historical_TSE10_LS500_condembsize5_EQW_YES/tests'
-define: &dir_hist_benchmark  '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical/ST2010_v2_VAL5_Banealing_L0_archNone_batch100_e100_cosine_lr_scheduler_cEBVAE_50-100_historical_TSE10_LS500_condembsize5_EQW_YES/tests'
-# define: &dir_hist_VAE1  '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical/ST2010_v2.1_VAL5_Banealing_L0_archNone_batch100_e100_cosine_lr_scheduler_cEBVAE_50-100_historical_TSE10_LS500_condembsize5_EQW/tests'
-# define: &dir_hist_VAE2  '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical/ST2010_v2.1_VAL5_Banealing_L0_archNone_batch100_e100_cosine_lr_scheduler_cEBVAE_50-100_historical_TSE10_LS500_condembsize5_EQW/tests'
+# define: &dir_hist_VAE1  '/XXXX/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical/ST2010_v2_VAL5_Banealing_L0_archNone_batch100_e100_cosine_lr_scheduler_cEBVAE_50-100_historical_TSE10_LS500_condembsize5_EQW_YES/tests'
+# define: &dir_hist_VAE2  '/XXXX/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical/ST2010_v2_VAL5_Banealing_L0_archNone_batch100_e100_cosine_lr_scheduler_cEBVAE_50-100_historical_TSE10_LS500_condembsize5_EQW_YES/tests'
+# define: &dir_hist_VAE3  '/XXXX/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical/ST2010_v2_VAL5_Banealing_L0_archNone_batch100_e100_cosine_lr_scheduler_cEBVAE_50-100_historical_TSE10_LS500_condembsize5_EQW_YES/tests'
+# define: &dir_hist_VAE4  '/XXXX/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical/ST2010_v2_VAL5_Banealing_L0_archNone_batch100_e100_cosine_lr_scheduler_cEBVAE_50-100_historical_TSE10_LS500_condembsize5_EQW_YES/tests'
+define: &dir_hist_benchmark  '/XXXX/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical/ST2010_v2_VAL5_Banealing_L0_archNone_batch100_e100_cosine_lr_scheduler_cEBVAE_50-100_historical_TSE10_LS500_condembsize5_EQW_YES/tests'
+# define: &dir_hist_VAE1  '/XXXX/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical/ST2010_v2.1_VAL5_Banealing_L0_archNone_batch100_e100_cosine_lr_scheduler_cEBVAE_50-100_historical_TSE10_LS500_condembsize5_EQW/tests'
+# define: &dir_hist_VAE2  '/XXXX/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical/ST2010_v2.1_VAL5_Banealing_L0_archNone_batch100_e100_cosine_lr_scheduler_cEBVAE_50-100_historical_TSE10_LS500_condembsize5_EQW/tests'
 
-define: &dir_hist_VAE1  '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical_long/ST2026_v2.1_VAL5_Banealing_L0_archNone_batch100_e200_cosine_lr_scheduler_cEBVAE_50-100_historical_TSE1_LS500_condembsize2_EQW/tests'
-define: &dir_hist_VAE2  '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical_long/ST2026_v2.1_VAL5_Banealing_L0_archNone_batch100_e200_cosine_lr_scheduler_cEBVAE_50-100_historical_TSE1_LS500_condembsize2_EQW/tests'
-# define: &dir_hist_VAE1  '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical_long/ST2015_v2.1_VAL5_Banealing_L0_archNone_batch100_e200_cosine_lr_scheduler_cEBVAE_50-100_historical_TSE1_LS500_condembsize50_EQW/tests'
-# define: &dir_hist_VAE2  '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical_long/ST2015_v2.1_VAL5_Banealing_L0_archNone_batch100_e200_cosine_lr_scheduler_cEBVAE_50-100_historical_TSE1_LS500_condembsize50_EQW/tests'
-# define: &dir_hist_VAE1  '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical_long/ST2026_v2.1_VAL5_Banealing_L0_archNone_batch100_e200_cosine_lr_scheduler_cEBVAE_50-100_historical_TSE1_LS500_condembsize5_EQW/tests'
-# define: &dir_hist_VAE2  '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical_long/ST2026_v2.1_VAL5_Banealing_L0_archNone_batch100_e200_cosine_lr_scheduler_cEBVAE_50-100_historical_TSE1_LS500_condembsize5_EQW/tests'
-define: &dir_hist_VAE3  '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical_long/ST2026_v2.1_VAL5_Banealing_L0_archNone_batch100_e200_cosine_lr_scheduler_cEBVAE_50-100_historical_TSE1_LS500_condembsize2_EQW/tests'
-define: &dir_hist_VAE4  '/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical_long/ST2026_v2.1_VAL5_Banealing_L0_archNone_batch100_e100_cosine_lr_scheduler_cEBVAE_50-100_XEnsCond_historical_TSE2_LS500_condembsize2_EQW/tests'
+define: &dir_hist_VAE  '/XXXX/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical_long/ST2026_v2.1_VAL5_Banealing_L0_archNone_batch100_e200_cosine_lr_scheduler_cEBVAE_50-100_historical_TSE1_LS500_condembsize2_EQW/tests'
+define: &dir_hist_VAE0  '/XXXX/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical_long/ST2026_v2.1_VAL5_Banealing_L0_archNone_batch100_e100_cosine_lr_scheduler_cEBVAE_50-1_historical_TSE1_LS500_condembsize2_EQW/tests'
+define: &dir_hist_VAE1  '/XXXX/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical_long/ST2026_v2.1_VAL5_Banealing_L0_archNone_batch100_e100_cosine_lr_scheduler_cEBVAE_50-1_historical_TSE1_LS500_condembsize2_EQW/tests'
+define: &dir_hist_VAE3  '/XXXX/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical_long/ST2026_v2.1_VAL5_Banealing_L0_archNone_batch100_e100_cosine_lr_scheduler_cEBVAE_50-1_historical_TSE1_LS500_condembsize2_EQW_SA4/tests'
+define: &dir_hist_VAE4  '/XXXX/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical_long/ST2026_v2.1_VAL5_Banealing_L0_archNone_batch100_e100_cosine_lr_scheduler_cEBVAE_50-1_historical_TSE1_LS500_condembsize2_EQW_SA3/tests'
+define: &dir_hist_VAE2  '/XXXX/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical_long/ST2026_v2.1_VAL5_Banealing_L0_archNone_batch100_e100_cosine_lr_scheduler_cEBVAE_50-1_historical_TSE1_LS500_condembsize2_EQW_SA2/tests'
+define: &dir_hist_VAE_XEns0 '/XXXX/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical_long/ST2026_v2.1_VAL5_Banealing_L0_archNone_batch10_e100_cosine_lr_scheduler_cEBVAE_50-1_XEnsCond_historical_TSE2_LS500_condembsize2_EQW/tests'
+define: &dir_hist_VAE_XEns '/XXXX/cccma/users/rpg002/output/tas/SOM-FFN/results/Autoencoder/run_set_final_historical_long/ST2026_v2.1_VAL5_Banealing_L0_archNone_batch10_e100_cosine_lr_scheduler_cEBVAE_50-1_XEnsCond_historical_TSE2_LS500_condembsize2_EQW/tests'
 
 
 
@@ -68,14 +68,17 @@ define: &file_clm_cVAE3 '*50_saved_model_normal_based_train_sampling2_1stds_outp
 # input files (historical dataset)
 define: &file_hist_population  'tas_Amon_ensmebles_195001_201412_1x1_LE' 
 define: &file_hist_population_extention  'tas_Amon_ensmebles_201501_210012_1x1_LE'
-# define: &file_hist_VAE1  '*_saved_model_2.5stds_output_sampling_multinormal_based_on_train_sampling'
+define: &file_hist_VAE  '*_saved_model_1stds_output_sampling_multinormal_based_on_train_sampling'
+define: &file_hist_VAE0  '*_saved_model_normal_based_on_train_sampling2_1stds_output_sampling_None'
+define: &file_hist_VAE1  '*_saved_model_normal_based_on_train_sampling2_1stds_output_sampling_multinormal_based_on_train_sampling'
+# define: &file_hist_VAE1  '*_saved_model_normal_based_on_train_sampling2_1stds_different_cond[5]_output_sampling_multinormal_based_on_train_sampling'
 define: &file_hist_VAE2  '*_saved_model_normal_based_on_train_sampling2_1stds_output_sampling_multinormal_based_on_train_sampling'
-define: &file_hist_VAE3  '*_saved_model_normal_based_on_train_sampling2_1stds_output_sampling_None'
-# define: &file_hist_VAE4  '*_saved_model_normal_based_on_train_sampling2_1stds_cond_smoothing4_output_sampling_multinormal_based_on_train_sampling'
+define: &file_hist_VAE3  '*_saved_model_normal_based_on_train_sampling2_1stds_output_sampling_multinormal_based_on_train_sampling'
 define: &file_hist_VAE4  '*_saved_model_normal_based_on_train_sampling2_1stds_output_sampling_multinormal_based_on_train_sampling'
+define: &file_hist_VAE_XEns0  '*_saved_model_normal_based_on_train_sampling2_1stds_output_sampling_None'
+define: &file_hist_VAE_XEns  '*_saved_model_normal_based_on_train_sampling2_1stds_output_sampling_multinormal_based_on_train_sampling'
 define: &file_hist_benchmark  '*_saved_model_use_condition_output_sampling_multinormal_based_on_train_sampling'
 
-define: &file_hist_VAE1  '*_saved_model_1stds_output_sampling_multinormal_based_on_train_sampling'
 
 ####################
 # input basic info #
@@ -105,10 +108,14 @@ list_data_clm:
 - clm_cVAE3
 
 list_data_hist:
-# - hist_VAE1
+- hist_VAE0
+- hist_VAE1
+# - hist_VAE11
 - hist_VAE2
-# - hist_VAE3
+- hist_VAE3
 - hist_VAE4
+# - hist_VAE_XEns0
+# - hist_VAE_XEns
 # - hist_benchmark
 
 # toy data dictionary
@@ -191,37 +198,70 @@ data_hist_info :
    file_in : *file_hist_population_extention
    var_in  : tas
    unit_change  : 1
+ hist_VAE:
+   dir_in  : *dir_hist_VAE
+   file_in : *file_hist_VAE
+   var_in  : nn_adjusted
+   unit_change  : 1
+   train_ens_ind : [0]
+
+ hist_VAE0:
+   dir_in  : *dir_hist_VAE0
+   file_in : *file_hist_VAE0
+   var_in  : nn_adjusted
+   unit_change  : 1
+   train_ens_ind : [0]
 
  hist_VAE1:
    dir_in  : *dir_hist_VAE1
    file_in : *file_hist_VAE1
    var_in  : nn_adjusted
    unit_change  : 1
+   train_ens_ind : [0]
+
 
  hist_VAE2:
    dir_in  : *dir_hist_VAE2
    file_in : *file_hist_VAE2
    var_in  : nn_adjusted
    unit_change  : 1
+   train_ens_ind : [2]
 
  hist_VAE3:
    dir_in  : *dir_hist_VAE3
    file_in : *file_hist_VAE3
    var_in  : nn_adjusted
    unit_change  : 1
+   train_ens_ind : [5]
 
  hist_VAE4:
    dir_in  : *dir_hist_VAE4
    file_in : *file_hist_VAE4
    var_in  : nn_adjusted
    unit_change  : 1
+   train_ens_ind : [3]
+
+
+ hist_VAE_XEns0:
+   dir_in  : *dir_hist_VAE_XEns0
+   file_in : *file_hist_VAE_XEns0
+   var_in  : nn_adjusted
+   unit_change  : 1
+   train_ens_ind : [0, 1]
+
+ hist_VAE_XEns:
+   dir_in  : *dir_hist_VAE_XEns
+   file_in : *file_hist_VAE_XEns
+   var_in  : nn_adjusted
+   unit_change  : 1
+   train_ens_ind : [0, 1]
 
  hist_benchmark:
    dir_in  : *dir_hist_benchmark
    file_in : *file_hist_benchmark
    var_in  : nn_adjusted
    unit_change  : 1
-
+   train_ens_ind : [0]
 
 
 

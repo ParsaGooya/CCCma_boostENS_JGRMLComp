@@ -523,6 +523,7 @@ def plot_spectra(dict_spectra,
 def plot_map(ds,
              lat=None,
              lon=None,
+             p_values = None,
              polar_stereo=False, 
              central_longitude=180,
              lat_lims=[50,90],
@@ -609,8 +610,7 @@ def plot_map(ds,
                              transform=ccrs.PlateCarree())
     if coastlines:
         axis.coastlines()
-    axis.set_title(title,
-                   fontsize=fnt_size)
+
 
     if cbar:
         clb_x = 0.055 #0.095 
@@ -648,7 +648,20 @@ def plot_map(ds,
 
         cb.set_label(label=cbar_label,
                      size=fnt_size-2) 
-       
+        
+    if p_values is not None:
+        p_values.plot.contourf(
+            ax = ax,
+            levels=[0.5, 1],
+            hatches=['...'],
+            colors='none',
+            add_colorbar=False,
+            transform=ccrs.PlateCarree()
+        )
+
+    axis.set_title(title,
+                   fontsize=fnt_size)
+
     fig.tight_layout()
     if save:
         Path(fig_dir).mkdir(parents=True, exist_ok=True)

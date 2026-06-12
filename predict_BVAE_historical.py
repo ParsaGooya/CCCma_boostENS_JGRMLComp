@@ -1,8 +1,6 @@
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import tqdm
-
 import dask
 import xarray as xr
 from pathlib import Path
@@ -11,16 +9,11 @@ from torch.distributions.multivariate_normal import MultivariateNormal
 import torch
 from torch.utils.data import DataLoader
 from torch.optim import lr_scheduler
-# from models.AE_13Nov_2024 import Autoencoder, Autoencoder_decoupled, MAF  ## !!!!!!! for versions older than 11 Nov 2024 use thise line !!!!!!!!!! ##
-from models.autoencoder import Autoencoder, Autoencoder_decoupled, MAF , RealNVP 
-from models.unet import UNet
-from models.cnn import CNN, SCNN
+from models.autoencoder import Autoencoder, MAF , RealNVP 
 from losses import WeightedMSE, WeightedMSESignLoss, WeightedMSEKLD, WeightedMSESignLossKLD, VAEloss
-from data_utils.datahandling import combine_observations
 from preprocessing import align_data_and_targets, get_coordinate_indices, create_train_mask, reshape_obs_to_data
 from preprocessing import AnomaliesScaler_v1, AnomaliesScaler_v2, Standardizer, PreprocessingPipeline, Spatialnanremove, calculate_climatology
 from torch_datasets import XArrayDataset
-from subregions import subregions
 from data_locations import *
 import gc
 import glob
@@ -31,25 +24,9 @@ import glob
 
 
 
+def resolve_params(params : dict, results_dir : str):
 
-def predict(params, var, test_years, lead_years,model_year = None,  results_dir=None, num_stds = 1 , truncated = False):
-    if var == 'tas':
-        data_dir_forecast = LOC_historical_tas
-        data_dir_obs = LOC_historical_tas
-        data_dir_ssp245 = LOC_ssp245_tas
-        unit_change = 1  ## Change units for ESM data to mol m-2 yr-1
-
-    elif var == 'pr':
-        data_dir_forecast = LOC_historical_pr
-        data_dir_obs = LOC_historical_pr
-        data_dir_ssp245 = LOC_ssp245_pr
-        unit_change = 1000  ## Change units for ESM data to mol m-2 yr-1
-
-    truncated_dist = None
-
-    if params['non_random_decoder_initialization'] not in [False, 'normal_based_on_train_sampling', 'normal_based_PCA_train_sampling']:
-        truncated = False
-        print(f'"truncated" set to False for params["non_random_decoder_initialization"] = {params["non_random_decoder_initialization"]}' )
+        
     if params['non_random_decoder_initialization'] == 'use_condition':
         assert params['condition_embedding_size'] is not None
         params['version'] = 2
@@ -59,20 +36,12 @@ def predict(params, var, test_years, lead_years,model_year = None,  results_dir=
     else:
         params['cross_member_training'] = False 
 
-    if 'RmEnsMn' in  results_dir:
-        params['remove_ensemble_mean'] = True 
-    else:
-        params['remove_ensemble_mean'] = False 
      
     if 'MSESUM' in  results_dir:
         params['loss_reduction'] = 'sum'
     else:
         params['loss_reduction'] = 'mean'
 
-    if 'LY' in results_dir:
-        lead_time = int(out_dir.split('LY')[1][0])
-    else:
-        lead_time = None
 
     if 'pR' not in  results_dir:
         params['min_posterior_variance'] =  None
@@ -121,28 +90,44 @@ def predict(params, var, test_years, lead_years,model_year = None,  results_dir=
             params['condemb_to_decoder'] = True
         else:
             params['condemb_to_decoder'] = False
-    try:
-        params['arch'] = int(out_dir.split('arch')[1][0])
-    except:
-        params['arch'] = None
+
     
-    assert params['version'] in [0, 1,2,3,2.1]
-    if params['BVAE'] is not None:
-        assert type(params['BVAE']) == int, 'Input the size of output ensemble as BVAE ...'
+    assert params['version'] in [0, 1,2]
+    if params['boosted_ensemble_size'] is not None:
+        assert type(params['boosted_ensemble_size']) == int, 'Input the size of output ensemble as boosted_ensemble_size ...'
     else:
-        params['BVAE'] = 1
+        params['boosted_ensemble_size'] = 1
     
-    if params['BVAE'] is not None:
+    if params['boosted_ensemble_size'] is not None:
         params['ensemble_mode'] = 'LE'
-        assert params['ensemble_list'] is not None, 'for the BVAE model you need to specify the ensemble size ...'
+        assert params['ensemble_list'] is not None, 'for the cVAE model you need to specify the ensemble size ...'
     
     if not params['non_random_decoder_initialization']:
-       if all([params['remove_ensemble_mean'] is False, any([params['time_features'] is None, params['append_mode'] != 3]),params['condition_embedding_size'] is None]):
+       if all([ any([params['time_features'] is None, params['append_mode'] != 3]),params['condition_embedding_size'] is None]):
             print('!!!! Warning: random decoder initializaiton is True without any conditions provided to the decoder !!!!!!' )
     
+    return params
 
-    if params["model"] not in [Autoencoder, Autoencoder_decoupled]:
-        params["append_mode"] = None
+
+
+def predict(params, var, test_years, lead_years = 1,model_year = None,  results_dir=None, num_stds = 1 , truncated = False):
+
+    if var == 'tas':
+        data_dir_forecast = LOC_historical_tas
+        data_dir_obs = LOC_historical_tas
+        data_dir_ssp245 = LOC_ssp245_tas
+        unit_change = 1  ## Change units for ESM data to mol m-2 yr-1
+
+    elif var == 'pr':
+        data_dir_forecast = LOC_historical_pr
+        data_dir_obs = LOC_historical_pr
+        data_dir_ssp245 = LOC_ssp245_pr
+        unit_change = 1000  ## Change units for ESM data to mol m-2 yr-1
+
+    truncated_dist = None
+
+    params = resolve_params(params, results_dir)
+
 
     if params['version'] == 1:
 
@@ -152,50 +137,24 @@ def predict(params, var, test_years, lead_years,model_year = None,  results_dir=
         ('standardize', Standardizer())]
         params['observations_preprocessing_steps'] = []
 
-
     elif params['version'] == 2:
 
         params['forecast_preprocessing_steps'] = [
         ('standardize', Standardizer(axis = (0,2)))]
-        params['forecast_ensemble_mean_preprocessing_steps'] = [
-        ('standardize', Standardizer(axis = (0,)))]
-        params['observations_preprocessing_steps'] = []
-
-    elif params['version'] == 2.1:
-
-        params['forecast_preprocessing_steps'] = [
-        ('standardize', Standardizer(axis = (0,2)))]
         params['forecast_ensemble_mean_preprocessing_steps'] = []
-        params['observations_preprocessing_steps'] = []
-
-    elif params['version'] == 3:
-
-        params['forecast_preprocessing_steps'] = [
-        ('standardize', Standardizer(axis = (0,1,2)))]
-        params['forecast_ensemble_mean_preprocessing_steps'] = [
-        ('standardize', Standardizer(axis = (0,1)))]
         params['observations_preprocessing_steps'] = []
 
     else:
         params['forecast_preprocessing_steps'] = []
-        params['observations_preprocessing_steps'] = []
         params['forecast_ensemble_mean_preprocessing_steps'] = []
+        params['observations_preprocessing_steps'] = []
     
-
-    print("Start training")
-
 
     ##### PG: Ensemble members to load 
     ensemble_list = params['ensemble_list']
     ###### PG: Add ensemble features to training features
     ensemble_mode = params['ensemble_mode'] ##
 
-    if params["arch"] == 3:
-        params["hidden_dims"] = [[1500, 720, 360, 180, 90, 30], [90, 180, 360, 720, 1500]]
-    if params['arch'] == 2:
-        params["hidden_dims"] = [[1500, 720, 360, 180, 90], [180, 360, 720, 1500]]
-    if params['arch'] == 1:
-        params["hidden_dims"] = [[ 720, 360, 180, 90,30], [90,180, 360, 720]]
     if params['condition_embedding_size'] == 'encoder':
         params['condition_embedding_size'] = params["hidden_dims"][0]
 
@@ -255,7 +214,7 @@ def predict(params, var, test_years, lead_years,model_year = None,  results_dir=
     
     del ds_in, obs_in
     gc.collect()
-    ##### PG: The ocean carbon flux has NaN values over land in both forecast and obs data and these are not necessarily in the excat same grid points. ###
+    ##### PG: The ocean has NaN values over land in both forecast and obs data and these are not necessarily in the excat same grid points. ###
     ##### We need to extract the common grid points where both obs and model data exist. That said, we need to flatten both the training and target data
     ##### I defined a Nanremover class. See preprocessing.py.
     
@@ -265,35 +224,7 @@ def predict(params, var, test_years, lead_years,model_year = None,  results_dir=
     obs_raw = nanremover.to_map(nanremover.sample(obs_raw)) ## PG: flatten and sample obs data at those locations    
     #######################################################################################################################################
 
-    if 'atm_co2' in params['extra_predictors']:
-        atm_co2 = xr.open_dataset('/home/rpg002/CMIP6_ssp245_xCO2atm_1982_2029.nc').ssp245
-        atm_co2 = reshape_obs_to_data(atm_co2, ds_raw_ensemble_mean, return_xarray=True).rename({'month' : 'lead_time'})
-        try:
-            extra_predictors = atm_co2.sel(year = ds_raw_ensemble_mean.year).expand_dims('channels', axis=2)
-        except:
-            raise ValueError("Extra predictors not available at the same years as the predictors.")
-        del atm_co2
-        gc.collect()
-    else:
-           extra_predictors = None     
 
-    if extra_predictors is not None:
-        if params["model"] in [ Autoencoder]:
-            weights = np.cos(np.ones_like(extra_predictors.lon) * (np.deg2rad(extra_predictors.lat.to_numpy()))[..., None])  # Moved this up
-            weights = xr.DataArray(weights, dims = extra_predictors.dims[-2:], name = 'weights').assign_coords({'lat': extra_predictors.lat, 'lon' : extra_predictors.lon}) 
-            extra_predictors = (extra_predictors * weights).sum(['lat','lon'])/weights.sum(['lat','lon'])
-        else:  
-            if not all(['ensembles' not in extra_predictors.dims, 'ensembles' in ds_raw_ensemble_mean.dims]): 
-                
-                ds_raw_ensemble_mean = xr.concat([ds_raw_ensemble_mean, extra_predictors], dim = 'channels')
-            else:
-                ds_raw_ensemble_mean = xr.concat([ds_raw_ensemble_mean, extra_predictors.expand_dims(ensembles = ds_raw_ensemble_mean['ensembles'], axis = 2) ], dim = 'channels')
-            extra_predictors = None
-
-
-
-    hyperparam = params["hyperparam"]
-    reg_scale = params["reg_scale"]
     model = params["model"]
     hidden_dims = params["hidden_dims"]
     time_features = params["time_features"]
@@ -308,9 +239,6 @@ def predict(params, var, test_years, lead_years,model_year = None,  results_dir=
     forecast_preprocessing_steps = params["forecast_preprocessing_steps"]
     forecast_ensemble_mean_preprocessing_steps = params["forecast_ensemble_mean_preprocessing_steps"]
     observations_preprocessing_steps = params["observations_preprocessing_steps"]
-
-    loss_region = params["loss_region"]
-    subset_dimensions = params["subset_dimensions"]
 
     conditional_embedding = True if condition_embedding_size is not None else False
     
@@ -332,14 +260,10 @@ def predict(params, var, test_years, lead_years,model_year = None,  results_dir=
             model_year_ = np.min([test_year - 1, ds_raw_ensemble_mean.year[-1].values])
         else:
             model_year_ = model_year
-        ####### time inclusion
-        # if params['correction']:
+
         train_years = ds_raw_ensemble_mean.year[ds_raw_ensemble_mean.year <= model_year_].to_numpy()
-        # else:
-        #     train_years = ds_raw_ensemble_mean.year[ds_raw_ensemble_mean.year <= test_year].to_numpy()
+
         n_train = len(train_years)
-        # if not params['correction']:
-        #     train_mask = np.full(train_mask.shape, False, dtype=bool)
 
         ds_baseline = ds_raw_ensemble_mean[:n_train,...] 
         obs_baseline = obs_raw[:n_train,...] 
@@ -352,23 +276,22 @@ def predict(params, var, test_years, lead_years,model_year = None,  results_dir=
 
         preprocessing_mask_obs = np.broadcast_to(train_mask[...,None,None,None], obs_baseline.shape)
 
-        if subset_dimensions is not None:
-            xmin, xmax, ymin, ymax = get_coordinate_indices(ds_raw_ensemble_mean, subset_dimensions)
-            ds = ds_raw_ensemble_mean[..., xmin:xmax+1, ymin:ymax+1]
-            obs = obs_raw[..., xmin:xmax+1, ymin:ymax+1]
-
-
         ######################### new ###############################            
 
         ds_em_before = ds_raw_ensemble_mean.mean('ensembles')
-        if params['remove_ensemble_mean']:  
-            ds_before = ds_raw_ensemble_mean - ds_em_before
-            ds_em_test = ds_em_before.sel(year = slice(test_year, test_year))  
+
+        ds_before =  ds_raw_ensemble_mean.copy()
+
+
+        if params['version'] == 2:
+            ds_pipeline = PreprocessingPipeline(forecast_preprocessing_steps).fit(ds_before[:n_train,...], mask=preprocessing_mask_fct)
+            ds = ds_pipeline.transform(ds_before)
+            if params['condition_type'] == 'cross_ensemble':
+                ds_em = ds_pipeline.transform(ds_raw_ensemble_mean).squeeze().rename({'ensembles' : 'channels'})
+            else:
+                ds_em = ds_pipeline.transform(ds_em_before.expand_dims('ensembles', axis  =2)).squeeze()
+            
         else:
-            ds_before =  ds_raw_ensemble_mean.copy()
-
-
-        if params['version'] != 2.1:
 
             ds_em_pipeline = PreprocessingPipeline(forecast_ensemble_mean_preprocessing_steps).fit(ds_em_before[:n_train,...], mask=preprocessing_mask_fct)
             if params['condition_type'] == 'cross_ensemble':
@@ -382,39 +305,24 @@ def predict(params, var, test_years, lead_years,model_year = None,  results_dir=
             else:
                 ds_pipeline = PreprocessingPipeline(forecast_preprocessing_steps).fit(ds_before[:n_train,...], mask=preprocessing_mask_fct)
                 ds = ds_pipeline.transform(ds_before)
-            
-        else:
-            ds_pipeline = PreprocessingPipeline(forecast_preprocessing_steps).fit(ds_before[:n_train,...], mask=preprocessing_mask_fct)
-            ds = ds_pipeline.transform(ds_before)
-            if params['condition_type'] == 'cross_ensemble':
-                ds_em = ds_pipeline.transform(ds_raw_ensemble_mean).squeeze().rename({'ensembles' : 'channels'})
-            else:
-                ds_em = ds_pipeline.transform(ds_em_before.expand_dims('ensembles', axis  =2)).squeeze()
 
 
         obs_pipeline = PreprocessingPipeline(observations_preprocessing_steps).fit(obs_baseline, mask=preprocessing_mask_obs)
         obs = obs_pipeline.transform(obs_raw)
         ##################################################################################
-        # if params['correction']:
+
         year_max = ds.year[-1].values 
-        # else:
-        # year_max = ds[:n_train].year[-1].values 
+
 
         del ds_baseline, obs_baseline, preprocessing_mask_obs, preprocessing_mask_fct
         gc.collect()
-        # TRAIN MODEL
-        ####### time inclusion
-        
+     
         ds_train = ds[:n_train,...]
         obs_train = obs[:n_train,...]
 
-        # if params['correction']:
         
         ds_test = ds.sel(year = slice(test_year, test_year))
         obs_test = obs.sel(year = slice(test_year, test_year))
-        # else:
-        #     ds_test = ds[n_train - 1:n_train ,...]
-        #     obs_test = obs[n_train -1:n_train ,...]
 
         weights = np.cos(np.ones_like(ds_train.lon) * (np.deg2rad(ds_train.lat.to_numpy()))[..., None])  # Moved this up
         weights = xr.DataArray(weights, dims = ds_train.dims[-2:], name = 'weights').assign_coords({'lat': ds_train.lat, 'lon' : ds_train.lon}) # Create an DataArray to pass to Spatialnanremove() 
@@ -424,33 +332,13 @@ def predict(params, var, test_years, lead_years,model_year = None,  results_dir=
         
 
         ########################################################################
+        ds_train = nanremover.sample(ds_train) ## PG: flatten and sample training data at those locations
+        obs_train = nanremover.sample(obs_train) ## PG: flatten and sample obs data at those locations   
+        weights = nanremover.sample(weights) ## PG: flatten and sample weighs at those locations
+        weights_ = nanremover.sample(weights_)
 
-        if model in [UNet , CNN]: ## PG: If the model starts with a nn.Conv2d write back the flattened data to maps.
+        img_dim = ds_train.shape[-1] ## PG: The input dim is now the length of the flattened dimention.
 
-            ds_train = ds_train.fillna(0.0) ## PG: fill NaN values with 0.0 for training
-            obs_train = obs_train.fillna(0.0) ## PG: fill NaN values with 0.0 for training
-
-            img_dim = ds_train.shape[-2] * ds_train.shape[-1] 
-            if loss_region is not None:
-                loss_region_indices, loss_area = get_coordinate_indices(ds_raw_ensemble_mean, loss_region)
-            
-            else:
-                loss_region_indices = None
-        
-        else: ## PG: If you have a dense first layer keep the data flattened.
-
-            ds_train = nanremover.sample(ds_train) ## PG: flatten and sample training data at those locations
-            obs_train = nanremover.sample(obs_train) ## PG: flatten and sample obs data at those locations   
-            weights = nanremover.sample(weights) ## PG: flatten and sample weighs at those locations
-            weights_ = nanremover.sample(weights_)
-
-            img_dim = ds_train.shape[-1] ## PG: The input dim is now the length of the flattened dimention.
-            if loss_region is not None:
-        
-                loss_region_indices = nanremover.extract_indices(subregions[loss_region]) ## PG: We need 1D index list rather than 2D lat:lon.
-
-            else:
-                loss_region_indices = None
 
         del ds, obs
         gc.collect()
@@ -471,20 +359,21 @@ def predict(params, var, test_years, lead_years,model_year = None,  results_dir=
 
 
 
-        if model == Autoencoder:
-            net = model(img_dim, hidden_dims[0], hidden_dims[1], added_features_dim=add_feature_dim, append_mode=params['append_mode'], batch_normalization=batch_normalization, dropout_rate=dropout_rate, VAE = params['BVAE'], condition_embedding_dims = params['condition_embedding_size'], full_conditioning = params["full_conditioning"], 
-                        condition_dependant_latent = params["condition_dependant_latent"], min_posterior_variance = params['min_posterior_variance'], prior_flow = params['prior_flow'], condemb_to_decoder = params['condemb_to_decoder'], device = device)
-        elif model == Autoencoder_decoupled:
-            net = model(img_dim, hidden_dims[0], hidden_dims[1], added_features_dim=add_feature_dim, append_mode=params['append_mode'], batch_normalization=batch_normalization, dropout_rate=dropout_rate)
 
+        net = model(img_dim, hidden_dims[0], hidden_dims[1], added_features_dim=add_feature_dim, append_mode=params['append_mode'], batch_normalization=batch_normalization, dropout_rate=dropout_rate, VAE = params['boosted_ensemble_size'], condition_embedding_dims = params['condition_embedding_size'], full_conditioning = params["full_conditioning"], 
+                        condition_dependant_latent = params["condition_dependant_latent"], min_posterior_variance = params['min_posterior_variance'], prior_flow = params['prior_flow'], condemb_to_decoder = params['condemb_to_decoder'], device = device)
+ 
         print('Loading model ....')
         net.load_state_dict(torch.load(glob.glob(results_dir+ '/Checkpoints' + f'/*1960-{model_year_}*.pth')[0], map_location=torch.device('cpu'))) 
 
         net.to(device)
+
+
         ## PG: XArrayDataset now needs to know if we are adding ensemble features. The outputs are datasets that are maps or flattened in space depending on the model.
         if any([params['non_random_decoder_initialization'] in ['histogram_based_sampling','normal_based_on_train_sampling', 'normal_based_PCA_train_sampling'], truncated, 'normal_based_on_train_sampling' in params['output_sampling']]):
-            train_set = XArrayDataset(ds_train, obs_train, mask=train_mask, lead_time = lead_time, extra_predictors= extra_predictors,lead_time_mask = params['lead_time_mask'], in_memory=False, time_features=time_features, aligned = True, year_max = year_max, conditional_embedding = conditional_embedding, cross_member_training = params['cross_member_training']) 
-        # dataloader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
+            train_set = XArrayDataset(ds_train, obs_train, mask=train_mask,  extra_predictors= extra_predictors, in_memory=False, time_features=time_features, aligned = True, year_max = year_max, conditional_embedding = conditional_embedding, cross_member_training = params['cross_member_training']) 
+
+
         if conditional_embedding:
             if params['condition_type'] == 'climatology':
                     ds_em = xr.concat([ds_em.mean('year').expand_dims('year', axis = 0) for _ in range(len(ds_em.year))], dim = 'year').assign_coords(year = ds_em.year.values)
@@ -493,12 +382,7 @@ def predict(params, var, test_years, lead_years,model_year = None,  results_dir=
             if params['conditon_smoothing'] is not None:
                 ds_em = ds_em.rolling(year = params['conditon_smoothing']).mean()
 
-            ds_test_conds = nanremover.sample(ds_em.sel(year = ds_test.year)).stack(flattened=('year','lead_time')).transpose('flattened',...)
-
-            if lead_time is not None:
-                ds_train_conds = ds_train_conds.where((ds_train_conds.lead_time >=  (lead_time - 1) * 12 + 1) & (ds_train_conds.lead_time < (lead_time *12 )+1), drop = True)
-                ds_test_conds = ds_test_conds.where((ds_test_conds.lead_time >=  (lead_time - 1) * 12 + 1) & (ds_test_conds.lead_time < (lead_time *12 )+1), drop = True)
-            
+            ds_test_conds = nanremover.sample(ds_em.sel(year = ds_test.year)).stack(flattened=('year','lead_time')).transpose('flattened',...)  
             
             ds_train_conds = torch.from_numpy(ds_train_conds.to_numpy())
             ds_test_conds = torch.from_numpy(ds_test_conds.to_numpy())
@@ -509,17 +393,14 @@ def predict(params, var, test_years, lead_years,model_year = None,  results_dir=
         ####### time inclusion
         ds_test = nanremover.sample(ds_test, mode = 'Eval')  ## PG: Sample the test data at the common locations
         obs_test = nanremover.sample(obs_test)
-        if model in [UNet, CNN]:
-            ds_test = nanremover.to_map(ds_test).fillna(0.0)  ## PG: Write back to map if the model starts with a nn.Conv2D
-            obs_test = nanremover.to_map(obs_test).fillna(0.0)
         ##################################################################################################################################
 
         test_lead_time_list = np.arange(1, ds_test.shape[1] + 1)
         test_years_list = np.arange(1, ds_test.shape[0] + 1)  ## PG: Extract the number of years as well 
-        test_set = XArrayDataset(ds_test, obs_test, lead_time = lead_time, extra_predictors= extra_predictors,lead_time_mask = params['lead_time_mask'], time_features=time_features,  in_memory=False, aligned = True, year_max = year_max, BVAE = params['BVAE'])
+        test_set = XArrayDataset(ds_test, obs_test,  extra_predictors= extra_predictors, time_features=time_features,  in_memory=False, aligned = True, year_max = year_max, boosted_ensemble_size = params['boosted_ensemble_size'])
         # dataloader_test = DataLoader(test_set, batch_size=1, shuffle=False)
-        criterion_test =  WeightedMSE(weights=weights_, device=device, hyperparam=1, reduction='mean', loss_area=loss_region_indices)
-        test_results = np.zeros_like(xr.concat([ds_test for _ in range(params['BVAE'])], dim = 'ensembles').values)
+        criterion_test =  WeightedMSE(weights=weights_, device=device, reduction='mean')
+        test_results = np.zeros_like(xr.concat([ds_test for _ in range(params['boosted_ensemble_size'])], dim = 'ensembles').values)
         ds_test = ds_test.rename({'ensembles' : 'batch'})
 
         if any([params['non_random_decoder_initialization'] in ['histogram_based_sampling','normal_based_on_train_sampling', 'normal_based_PCA_train_sampling'],truncated, 'normal_based_on_train_sampling' in params['output_sampling'] ]):
@@ -552,7 +433,6 @@ def predict(params, var, test_years, lead_years,model_year = None,  results_dir=
                     del x_in, cond, x_recons
                     train_samples = net.sample(mu, log_var, 20)
                     del mu, log_var
-                    # train_mu = net(x_in, condition = cond, sample_size = 1)[1]
                     try:
                         train_samples = train_samples.numpy().reshape(-1, net.latent_size)
                     except:
@@ -560,8 +440,6 @@ def predict(params, var, test_years, lead_years,model_year = None,  results_dir=
 
             if truncated:
                 truncated_dist = np.sqrt(((train_samples - train_samples.mean(axis = 0))**2).sum(-1)).max()
-                # truncated_min = train_samples.min(axis = 0)
-                # truncated_max = train_samples.max(axis = 0)
 
             if params['non_random_decoder_initialization'] == 'normal_based_on_train_sampling':
                 means = np.mean(train_samples, axis=0) * 0
@@ -591,29 +469,18 @@ def predict(params, var, test_years, lead_years,model_year = None,  results_dir=
                     for month in range(12):
                         if params['output_sampling'] == 'conditional_multinormal_based_on_train_sampling':
                             residual_covs[month] = torch.cov(x_residuals[month:-1:12].T)    
-                            # try:
-                            #     torch.linalg.cholesky(residual_covs[month])
-                            # except:
-                            #     try:
-                                    # print(f'\n Cholesky test failed, epsilon = 1e-5 added to the diagonal of covariance matrix month {month}! \n')
                             print('epsilon = 1e-3 added to the diagonal of covariance matrix! \n')
                             residual_covs[month] += torch.eye(residual_covs[month].shape[0]).to(device) * 1e-3
-                                # except RuntimeError:
-                                #     print("Covariance matrix is not positive definite!")
+
                         else:
                             residual_covs[month] = torch.std(x_residuals[month:-1:12], dim = 0)
                 
                 elif params['output_sampling'] == 'multinormal_based_on_train_sampling':
                         residual_covs = torch.cov(x_residuals.T)    
-                        # try:
-                        #     torch.linalg.cholesky(residual_covs)
-                        # except:
-                        #     try:
-                        #         print('\n Cholesky test failed, epsilon = 1e-5 added to the diagonal of covariance matrix! \n')
+
                         print('epsilon = 1e-3 added to the diagonal of covariance matrix! \n')
                         residual_covs += torch.eye(residual_covs.shape[0]).to(device) * 1e-3
-                            # except RuntimeError:
-                            #     print("Covariance matrix is not positive definite!")
+  
                 else:
                         residual_covs = torch.std(x_residuals, dim = 0)                    
             try:
@@ -658,39 +525,37 @@ def predict(params, var, test_years, lead_years,model_year = None,  results_dir=
                     sample_size = test_raw[0].shape[0] if (type(test_raw) == list) or (type(test_raw) == tuple) else test_raw.shape[0]
                     if params['non_random_decoder_initialization'] == 'use_condition':
 
-                        out = cond.repeat((params['BVAE']* sample_size, 1))
+                        out = cond.repeat((params['boosted_ensemble_size']* sample_size, 1))
                     else:
 
                         if params['non_random_decoder_initialization'] is False:
-                            # z =  Normal(torch.zeros(net.latent_size), num_stds *  torch.ones(( net.latent_size))).rsample(sample_shape=(params['BVAE']* sample_size,)).to(device)
-                            z = torch_normal_sampling(torch.zeros(net.latent_size), num_stds *  torch.ones(( net.latent_size)), num_samples=  params['BVAE']* sample_size,
+                            z = torch_normal_sampling(torch.zeros(net.latent_size), num_stds *  torch.ones(( net.latent_size)), num_samples=  params['boosted_ensemble_size']* sample_size,
                                                     truncated_dist = truncated_dist ).to(device)
                         else:
                             if params['condition_dependant_latent']:
                                     _, _, _, cond_mu, cond_log_var = net(test_raw, condition = cond, sample_size = 1)
                                     cond_var = torch.exp(cond_log_var) + 1e-4
-                                    z =  Normal(cond_mu.squeeze(), torch.sqrt(cond_var).squeeze() * torch.tensor(np.array(num_stds))).rsample(sample_shape=(params['BVAE'] * sample_size,)).to(device)
+                                    z =  Normal(cond_mu.squeeze(), torch.sqrt(cond_var).squeeze() * torch.tensor(np.array(num_stds))).rsample(sample_shape=(params['boosted_ensemble_size'] * sample_size,)).to(device)
     
                             elif params['non_random_decoder_initialization'] == 'encoder_based_sampling':
                                 _, mu, log_var = net(test_raw, condition = cond, sample_size = 1)[:3]
                                 samples = net.sample(mu, log_var, 100 )
                                 var = torch.exp(log_var) + 1e-4
-                                z =  Normal(torch.mean(samples, (0,1)), torch.std(samples, (0,1)) * torch.tensor(np.array(num_stds)) ).rsample(sample_shape=(params['BVAE'] * sample_size,)).to(device)
+                                z =  Normal(torch.mean(samples, (0,1)), torch.std(samples, (0,1)) * torch.tensor(np.array(num_stds)) ).rsample(sample_shape=(params['boosted_ensemble_size'] * sample_size,)).to(device)
                                 
                             elif params['non_random_decoder_initialization'] == 'histogram_based_sampling':
-                                z = hist_sampling(hist, edges, np.min([net.latent_size,5]) , num_samples = params['BVAE'] * sample_size)
+                                z = hist_sampling(hist, edges, np.min([net.latent_size,5]) , num_samples = params['boosted_ensemble_size'] * sample_size)
                                 if  net.latent_size > 32 :
                                     z = pca.inverse_transform(z)
 
                                 z = torch.from_numpy(z).float().to(device)
 
                             elif params['non_random_decoder_initialization'] == 'normal_based_on_train_sampling':
-                                    # z =  Normal(torch.zeros(net.latent_size), stds ).rsample(sample_shape=(params['BVAE']* sample_size,)).to(device)
-                                    z = torch_normal_sampling(torch.tensor(means, dtype=torch.float32), torch.tensor(covs, dtype=torch.float32), num_samples=  params['BVAE']* sample_size, 
+                                    z = torch_normal_sampling(torch.tensor(means, dtype=torch.float32), torch.tensor(covs, dtype=torch.float32), num_samples=  params['boosted_ensemble_size']* sample_size, 
                                                             truncated_dist = truncated_dist, multivariate=True ).to(device)
                                     z = torch.tensor(means, dtype=torch.float32).to(device) + (z - torch.tensor(means, dtype=torch.float32).to(device)) * torch.tensor(np.array(num_stds), dtype=torch.float32).to(device) ## sample from a wider standard deviation
                             elif params['non_random_decoder_initialization'] == 'normal_based_PCA_train_sampling':
-                                    z = torch_normal_sampling(torch.tensor(means, dtype=torch.float32), torch.tensor(covs, dtype=torch.float32), num_samples=  params['BVAE']* sample_size, 
+                                    z = torch_normal_sampling(torch.tensor(means, dtype=torch.float32), torch.tensor(covs, dtype=torch.float32), num_samples=  params['boosted_ensemble_size']* sample_size, 
                                                             truncated_dist = truncated_dist, multivariate=True ).to(device)
                                     z = torch.tensor(means, dtype=torch.float32).to(device) + (z - torch.tensor(means, dtype=torch.float32).to(device)) * torch.tensor(np.array(num_stds), dtype=torch.float32).to(device) ## sample from a wider standard deviation
                                     z = pca.inverse_transform(z)
@@ -698,8 +563,7 @@ def predict(params, var, test_years, lead_years,model_year = None,  results_dir=
                             else:   
                                 raise RuntimeError("Specify the sampling strategy fop the prior is not condition dependent. Hint: adjust params['non_random_decoder_initialization']")
 
-                            # z = torch.unflatten(z, dim = 0, sizes = (-1,len(ensemble_list)))
-                        #### cut from above
+
 
                         if params['prior_flow'] is not None:
 
@@ -716,7 +580,7 @@ def predict(params, var, test_years, lead_years,model_year = None,  results_dir=
                                 
                         if all([params['time_features'] is not None, params['append_mode'] != 1]):
                             z = torch.unflatten(z, dim = 0, sizes = (-1,len(ensemble_list)))
-                            z = torch.cat([z, test_raw[1].unsqueeze(0).expand((params['BVAE'], *test_raw[1].shape))], dim=-1)
+                            z = torch.cat([z, test_raw[1].unsqueeze(0).expand((params['boosted_ensemble_size'], *test_raw[1].shape))], dim=-1)
                             z = torch.flatten(z, start_dim = 0, end_dim = 1)
 
                         if all([conditional_embedding is True,  params['condemb_to_decoder']]):
@@ -752,33 +616,21 @@ def predict(params, var, test_years, lead_years,model_year = None,  results_dir=
                         epsilon = torch.zeros(out.shape).to(device)
 
                     test_adjusted =   (out + epsilon).unsqueeze(-2)                                                                                      
-                    # loss = criterion_test(torch.mean(test_adjusted, 1), target.unsqueeze(-2) )
-                    # loss = criterion_test(torch.mean(test_adjusted, 0), target, )
                     
                     test_results[year_idx,lead_time_idx, ] = test_adjusted.to(torch.device('cpu')).numpy()
-                    # test_loss[year_idx, lead_time_idx] = loss.item() 
+                    
         del  test_set , test_raw, test_obs, x, target, m,  test_adjusted , ds_test, obs_test,
         gc.collect()
 
         reverse_preprocessing_pipeline =  ds_pipeline
         ##################################################################################################################################
-        if model in [UNet , CNN]:   ## PG: if the output is already a map
-            test_results_untransformed = reverse_preprocessing_pipeline.inverse_transform(test_results)
-            result = xr.DataArray(test_results_untransformed, ds_test.coords, ds_test.dims, name='nn_adjusted')
-        else:  
-            test_results_upsampled = nanremover.to_map(test_results)  ## PG: If the output is spatially flat, write back to maps
-            if params['non_random_decoder_initialization'] == 'use_condition':
-                test_results_upsampled = test_results_upsampled.transpose('year','ensembles', ...)
-            test_results_untransformed = reverse_preprocessing_pipeline.inverse_transform(test_results_upsampled.values) ## PG: Check preprocessing.AnomaliesScaler for changes
-            result = xr.DataArray(test_results_untransformed, test_results_upsampled.coords, test_results_upsampled.dims, name='nn_adjusted')
-            if params['non_random_decoder_initialization'] == 'use_condition':
-                result = result.transpose('year','lead_time', 'ensembles', ...)
-            ####################### new ######################
-            if params['remove_ensemble_mean']:
-                    result = result + ds_em_test.to_dataset(name='nn_adjusted')
-                    del ds_em_test
-            #################################################
-        
+        test_results_upsampled = nanremover.to_map(test_results)  ## PG: If the output is spatially flat, write back to maps
+        if params['non_random_decoder_initialization'] == 'use_condition':
+            test_results_upsampled = test_results_upsampled.transpose('year','ensembles', ...)
+        test_results_untransformed = reverse_preprocessing_pipeline.inverse_transform(test_results_upsampled.values) ## PG: Check preprocessing.AnomaliesScaler for changes
+        result = xr.DataArray(test_results_untransformed, test_results_upsampled.coords, test_results_upsampled.dims, name='nn_adjusted')
+        if params['non_random_decoder_initialization'] == 'use_condition':
+            result = result.transpose('year','lead_time', 'ensembles', ...)
         ##################################################################################################################################
         # Store results as NetCDF            
         out_name = f'tests/nn_adjusted_{test_year}_saved_model_'
@@ -876,45 +728,41 @@ def extract_params(model_dir):
                     params[key] = ls
                 else:
                     params[key] = value
-    return params
+
+    print(f'loaded configuration: \n')
+    for key, values in params.items():
+        print(f'{key} : {values} \n')
+
+    try:
+        version = eval(out_dir.split('/')[-1].split('_')[1][1:])
+    except:
+        version = (out_dir.split('/')[-1].split('_')[1][1:])
+
+    print( f'Version: {version}')
+
+    return params, version
 
 if __name__ == "__main__":
 
     var = 'tas'
     fake_data = 'pi'
     out_dir_x  = f'/space/hall7/sitestore/eccc/crd/cccma/users/rpg002/output/{var}/SOM-FFN/results/Autoencoder/run_set_final_historical_long'
-    out_dir    = f'{out_dir_x}/ST2026_v2.1_VAL5_Banealing_L0_archNone_batch100_e100_cosine_lr_scheduler_cEBVAE_50-100_XEnsCond_historical_TSE2_LS500_condembsize2_EQW'  
-                                
-              
-    lead_years = 1  # int(len(xr.open_mfdataset(str(Path(out_dir , "*.nc")), combine='nested', concat_dim='year').lead_time)/12)
+    out_dir    = f'{out_dir_x}/ST2026_v2.1_VAL5_Banealing_L0_archNone_batch100_e100_cosine_lr_scheduler_cEBVAE_50-100_XEnsCond_historical_TSE2_LS500_condembsize2_EQW'                     
 
-    params = extract_params(out_dir)
-    print(f'loaded configuration: \n')
-    for key, values in params.items():
-        print(f'{key} : {values} \n')
-    
-    try:
-        version = eval(out_dir.split('/')[-1].split('_')[1][1:])
-    except:
-        version = (out_dir.split('/')[-1].split('_')[1][1:])
-      
+    params, version = extract_params(out_dir)
     params["version"] = version
-    print( f'Version: {version}')
-    print(f'lead_years: {lead_years}')
-
+    
     ### handles
-    num_stds = 1 ### params['non_random_decoder_initialization'] should be False or 'normal_based_on_train_sampling'
-    truncated = False ### params['non_random_decoder_initialization'] should be False or 'normal_based_on_train_sampling'
+    num_stds = 1 
+
     params['non_random_decoder_initialization'] =  'normal_based_on_train_sampling' ## False,'normal_based_on_train_sampling' , True ('condition_dependent_latent'), 'encoder_based_sampling', 'histogram_based_sampling', 'normal_based_PCA_train_sampling, 'use_condition'
-    params['BVAE'] = 50
+    params['boosted_ensemble_size'] = 50
     params['output_sampling'] =  'multinormal_based_on_train_sampling' # None, Gaussian_noise, normal_based_on_train_sampling, multinormal_based_on_train_sampling, conditional_normal_based_on_train_sampling, conditional_multinormal_based_on_train_sampling,  modeled_varaince, 
     params['conditon_smoothing'] = None
     test_years = np.arange(1980,2020) #
     
-
     Path(out_dir + '/tests').mkdir(parents=True, exist_ok=True)
 
-
-    predict(params, var, test_years=test_years,model_year = 2020, num_stds = num_stds, truncated = truncated , lead_years=lead_years,  results_dir=out_dir)
+    predict(params, var, test_years=test_years,model_year = 2020, num_stds = num_stds,  results_dir=out_dir)
     print(f'Output dir: {out_dir}')
     print('Training done.')

@@ -71,14 +71,16 @@ class WeightedMSE:
 
 
 class WeightedMSESignLoss:  ## PG: penalizing negative anomalies
-    def __init__(self, weights, device, hyperparam=2.0, min_threshold=0, max_threshold=0, reduction='mean', loss_area=None, exclude_zeros=True, scale=1, min_val=0, max_val=None, exclude_dim = None):
+    def __init__(self, weights, device, hyperparam=2.0, min_threshold=0, max_threshold=0, reduction='mean', loss_area=None, exclude_zeros=True, scale= None, min_val=0, max_val=None, exclude_dim = None):
         self.mse = WeightedMSE(weights=weights, device=device, hyperparam=hyperparam, reduction=reduction, loss_area=loss_area, exclude_dim = exclude_dim)
-        self.sign_loss = SignLoss( device=device, scale=scale, min_val=min_val, max_val=max_val, weights=weights, loss_area=loss_area, exclude_zeros=exclude_zeros, exclude_dim = exclude_dim)
+        if scale is not None :
+            self.sign_loss = SignLoss( device=device, scale=scale, min_val=min_val, max_val=max_val, weights=weights, loss_area=loss_area, exclude_zeros=exclude_zeros, exclude_dim = exclude_dim)
 
     def __call__(self, data, target, mask = None):
         loss = 0
         loss += self.mse(data, target, mask = mask)
-        loss += self.sign_loss(data, target, mask = mask)
+        if self.scale is not None :
+            loss += self.sign_loss(data, target, mask = mask)
         return loss
     
 

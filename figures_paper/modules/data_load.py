@@ -90,7 +90,7 @@ def load_clm_data(list_data,
 def load_hist_data(list_data,
                   ddata_info,
                   var='tas',
-                  train_ensemble_size = 10):
+                  train_ensemble_inds = [0]):
 
     dict_data = {}
 
@@ -118,7 +118,7 @@ def load_hist_data(list_data,
 
     if 'population' in list_data:
         dict_data['population'] = xr.concat([dict_data['population'], dict_data['population_extention']], dim = 'year')
-        dict_data['train_sample'] = dict_data['population'].isel(realization= np.arange(0,train_ensemble_size)).astype('float32')
+        dict_data['train_sample'] = dict_data['population'].isel(realization= train_ensemble_inds).astype('float32')
         del dict_data['population_extention'] 
 
     return dict_data

@@ -12,7 +12,7 @@
 
 ## Content
 
-This repository contains scripts for designing, running, and tuning hyperparameters of simple MLP-based Variational Autoencoder (VAE) models, as well as code for plotting the results as presented in the manuscript above.
+This repository contains scripts for training and running a simple MLP-based Variational Autoencoder (VAE) models, as well as code for plotting the results as presented in the manuscript above.
 
 - **`run_training_BVAE_historical.py`**
   Contain the main code for training the cVAE models on historical and ssp245 data.  
@@ -25,6 +25,14 @@ This repository contains scripts for designing, running, and tuning hyperparamet
 
 - **`figures_paper/` directory**  
   Includes notebooks and scripts used for analysis of results and generation of the manuscript figures.
+
+Note
+
+This repository contains research-grade code developed to support the experiments and figures presented in the accompanying manuscript. The code is provided as-is and is not actively maintained.
+
+A dedicated post-processing software package is currently under development and will be released separately upon completion. To improve readability and reproducibility, the code included here was cleaned and simplified at the time of publication, with unused variables, experimental options, and project-specific utilities removed where possible.
+
+If you encounter issues while running the code or have questions regarding the implementation, please contact Parsa Gooya at parsa.gooya@ec.gc.ca.
 
 ---
 

@@ -216,7 +216,7 @@ class plt_module(object):
                                                   's'         : 80,
                                                   },
 
-                                 'hist_VAE1'     : {
+                                 'hist_VAE'     : {
                                                   'color'     : 'green',
                                                   'linestyle' : '-',
                                                   'linewidth' : 1, 
@@ -226,17 +226,7 @@ class plt_module(object):
                                                   'marker'    : 'o',
                                                   'alpha'     : 1,
                                                   },
-                                 'hist_VAE2'     : {
-                                                  'color'     : 'green',
-                                                  'linestyle' : '-',
-                                                  'linewidth' : 1, 
-                                                  'label'     : 'VAE + DN',
-                                                  'histtype'  : 'step',  
-                                                  'facecolor' : None,
-                                                  'marker'    : 'o',
-                                                  'alpha'     : 1,
-                                                  },
-                                 'hist_VAE3'     : {
+                                 'hist_VAE0'     : {
                                                   'color'     : 'green',
                                                   'linestyle' : 'dashed',
                                                   'linewidth' : 1, 
@@ -246,16 +236,69 @@ class plt_module(object):
                                                   'marker'    : 'o',
                                                   'alpha'     : 0.5,
                                                   },
+
+                                 'hist_VAE1'     : {
+                                                  'color'     : 'green',
+                                                  'linestyle' : '-',
+                                                  'linewidth' : 1, 
+                                                  'label'     : 'VAE + DN',
+                                                  'histtype'  : 'step',  
+                                                  'facecolor' : None,
+                                                  'marker'    : 'o',
+                                                  'alpha'     : 1,
+                                                  },
+
+                                 'hist_VAE2'     : {
+                                                  'color'     : 'cyan',
+                                                  'linestyle' : '-',
+                                                  'linewidth' : 1, 
+                                                  'label'     : 'VAE + DN (2)',
+                                                  'histtype'  : 'step',  
+                                                  'facecolor' : None,
+                                                  'marker'    : 'o',
+                                                  'alpha'     : 1,
+                                                  },
+                                 'hist_VAE3'     : {
+                                                  'color'     : 'purple',
+                                                  'linestyle' : '-',
+                                                  'linewidth' : 1, 
+                                                  'label'     : 'VAE + DN (3)',
+                                                  'histtype'  : 'step',  
+                                                  'facecolor' : None,
+                                                  'marker'    : 'o',
+                                                  'alpha'     : 1,
+                                                  },
                                  'hist_VAE4'     : {
+                                                  'color'     : 'red',
+                                                  'linestyle' : '-',
+                                                  'linewidth' : 1, 
+                                                  'label'     : 'VAE + DN (4)',
+                                                  'histtype'  : 'step',  
+                                                  'facecolor' : None,
+                                                  'marker'    : 'o',
+                                                  'alpha'     : 1,
+                                                  },
+                                 'hist_VAE_XEns'     : {
                                                   'color'     : 'tab:orange',
                                                   'linestyle' : '-',
                                                   'linewidth' : 1, 
-                                                  'label'     : 'VAE + DN + smoothing',
+                                                  'label'     : 'VAE-XEns + DN',
                                                   'histtype'  : 'step',  
                                                   'facecolor' : 'w',
                                                   'marker'    : 'o',
                                                   'alpha'     : 1,
                                                   },
+
+                                 'hist_VAE_XEns0'     : {
+                                                  'color'     : 'tab:orange',
+                                                  'linestyle' : 'dashed',
+                                                  'linewidth' : 1, 
+                                                  'label'     : 'VAE-XEns',
+                                                  'histtype'  : 'step',  
+                                                  'facecolor' : 'tab:orange',
+                                                  'marker'    : 'o',
+                                                  'alpha'     : 0.5,
+                                                  },                                                  
                                  'hist_benchmark'     : {
                                                   'color'     : 'tab:red',
                                                   'linestyle' : 'dotted',
